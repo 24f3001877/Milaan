@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+node_modules/
+dist/
+
+# Runtime data and generated evaluation output
+data/uploads/
+data/llm_cache/
+metrics.json
+metrics.md
+pathology_table.md
+
+# Local deployment secrets
+.env.deploy
+frontend/.env.local
+docs/

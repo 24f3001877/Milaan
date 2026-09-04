@@ -1,0 +1,19 @@
+{
+  "bank_txn_count": 80,
+  "order_count": 5000,
+  "pathology_counts": {
+    "ambiguous_multi_candidate": 39,
+    "amount_mismatch": 43,
+    "chargeback_debit_unlinked": 60,
+    "duplicate_utr": 3,
+    "fee_variance": 54,
+    "missing_in_bank": 39,
+    "missing_in_gateway": 46,
+    "netted_refund_unlinked": 60,
+    "orphan_bank_credit": 51,
+    "partial_settlement": 82,
+    "period_boundary_timing": 44,
+    "unknown_adjustment": 51
+  },
+  "settlement_line_count": 5166
+}

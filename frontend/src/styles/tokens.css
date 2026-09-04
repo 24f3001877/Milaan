@@ -1,0 +1,150 @@
+/* Design tokens (UI/UX §3.1): dense financial instrument, not consumer SaaS.
+   Near-neutral base, colour reserved to carry meaning only — no gradients, no
+   illustrations, no decorative accent. If a colour appears, it is saying something. */
+
+:root {
+  /* Structural chrome — zinc scale */
+  --zinc-950: #09090b;
+  --zinc-900: #18181b;
+  --zinc-800: #27272a;
+  --zinc-700: #3f3f46;
+  --zinc-600: #52525b;
+  --zinc-500: #71717a;
+  --zinc-400: #a1a1aa;
+  --zinc-300: #d4d4d8;
+  --zinc-200: #e4e4e7;
+  --zinc-100: #f4f4f5;
+  --zinc-50: #fafafa;
+
+  /* Semantic — matched/approved/T1 certainty */
+  --emerald-800: #065f46;
+  --emerald-700: #047857;
+  --emerald-600: #059669;
+  --emerald-100: #d1fae5;
+  --emerald-50: #ecfdf5;
+
+  /* Semantic — inferred/needs review/T3 allocation */
+  --amber-800: #92400e;
+  --amber-700: #b45309;
+  --amber-600: #d97706;
+  --amber-100: #fef3c7;
+  --amber-50: #fffbeb;
+
+  /* Semantic — variance/rejected/false-match risk */
+  --rose-800: #9f1239;
+  --rose-700: #be123c;
+  --rose-600: #e11d48;
+  --rose-100: #ffe4e6;
+  --rose-50: #fff1f2;
+
+  /* Semantic — LLM-originated content. Indigo means "a model proposed this", and it
+     is used for nothing else, anywhere. See UI/UX §3.1. */
+  --indigo-800: #3730a3;
+  --indigo-700: #4338ca;
+  --indigo-600: #4f46e5;
+  --indigo-100: #e0e7ff;
+  --indigo-50: #eef2ff;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-sunken: var(--zinc-50);
+  --surface-header: #fcfcfd;
+  --border: var(--zinc-200);
+  --border-strong: var(--zinc-300);
+
+  /* 'Inter Variable' is the family name @fontsource-variable/inter registers; plain
+     'Inter' is kept as a fallback for a system-installed copy. */
+  --font-ui: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Type scale — deliberately small. An analyst reconciling 5,000 records wants rows
+     on screen, and every step up here costs rows. */
+  --text-xs: 10.5px;
+  --text-sm: 11.5px;
+  --text-base: 12.5px;
+  --text-md: 13.5px;
+  --text-lg: 15px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 28px;
+
+  --row-height: 32px;
+  --header-height: 46px;
+  --radius: 3px;
+  --radius-sm: 2px;
+
+  --shadow-drawer: -1px 0 0 var(--border), -8px 0 24px rgb(9 9 11 / 4%);
+  --shadow-overlay: 0 8px 32px rgb(9 9 11 / 18%), 0 0 0 1px var(--zinc-300);
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--surface-sunken);
+  color: var(--zinc-900);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  height: 100%;
+  min-width: 1280px;
+}
+
+/* Tabular figures are non-negotiable (UI/UX §3.1): digits must align vertically in a
+   column or amounts cannot be scanned. Anything numeric or identifier-shaped gets this. */
+.mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.money {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--indigo-600);
+  outline-offset: 1px;
+}
+
+/* Reduced motion: the only animation in the product is the skeleton pulse. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk -F'=' '/^LLM_API_KEY=/{v=substr\\($0, index\\($0,\"=\"\\)+1\\); gsub\\(/[A-Za-z0-9_\\\\-]/,\"x\",v\\); print \"shape: [\" v \"]\"}' .env)",
+      "Bash(docker compose *)"
+    ]
+  }
+}

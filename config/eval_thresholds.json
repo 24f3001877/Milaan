@@ -1,0 +1,7 @@
+{
+  "_comment": "Full CI gate thresholds (Appflow \u00a74.2, job 3). This is the FINAL gate, checked once the agent/LLM triage layer exists on top of the deterministic T1-T4 cascade. See GATE 1 in the Implementation Plan (\u00a76.2) for the earlier, looser deterministic-only checkpoint (auto_match_rate >= 0.75, false_match_rate <= 0.005), which eval/gate.py also supports via --auto-match-rate-min/--false-match-rate-max overrides.",
+  "auto_match_rate_min": 0.90,
+  "false_match_rate_max": 0.005,
+  "unexplained_value_pct_max": 0.02,
+  "p95_runtime_seconds_max": 300
+}
