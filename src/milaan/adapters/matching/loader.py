@@ -27,15 +27,24 @@ def load_orders(session: Session, run_id: uuid.UUID) -> list[OrderEntity]:
 
 
 def load_settlement_lines(session: Session, run_id: uuid.UUID) -> list[SettlementLineEntity]:
-    rows = session.execute(
-        select(SettlementLine).where(SettlementLine.run_id == run_id)
-    ).scalars().all()
+    rows = (
+        session.execute(select(SettlementLine).where(SettlementLine.run_id == run_id))
+        .scalars()
+        .all()
+    )
     return [
         SettlementLineEntity(
-            id=r.id, settlement_id=r.settlement_id, payment_id=r.payment_id,
-            order_ref=r.order_ref, line_type=r.line_type.value if hasattr(r.line_type, "value") else r.line_type,
-            gross=Money(r.gross), net=Money(r.net), utr=r.utr, settled_on=r.settled_on,
-            fee=Money(r.fee), tax=Money(r.tax),
+            id=r.id,
+            settlement_id=r.settlement_id,
+            payment_id=r.payment_id,
+            order_ref=r.order_ref,
+            line_type=r.line_type.value if hasattr(r.line_type, "value") else r.line_type,
+            gross=Money(r.gross),
+            net=Money(r.net),
+            utr=r.utr,
+            settled_on=r.settled_on,
+            fee=Money(r.fee),
+            tax=Money(r.tax),
             instrument=r.instrument.value if hasattr(r.instrument, "value") else r.instrument,
         )
         for r in rows
@@ -46,8 +55,12 @@ def load_bank_txns(session: Session, run_id: uuid.UUID) -> list[BankTxnEntity]:
     rows = session.execute(select(BankTxn).where(BankTxn.run_id == run_id)).scalars().all()
     return [
         BankTxnEntity(
-            id=r.id, value_date=r.value_date, narration=r.narration,
-            utr_extracted=r.utr_extracted, credit=Money(r.credit), debit=Money(r.debit),
+            id=r.id,
+            value_date=r.value_date,
+            narration=r.narration,
+            utr_extracted=r.utr_extracted,
+            credit=Money(r.credit),
+            debit=Money(r.debit),
         )
         for r in rows
     ]

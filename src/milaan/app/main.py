@@ -31,7 +31,7 @@ def _boot_settings() -> Settings | None:
     """
     try:
         return get_settings()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("boot_settings_unavailable", error=str(exc))
         return None
 
@@ -71,7 +71,7 @@ def readyz() -> dict[str, str]:
         finally:
             db.close()
         return {"status": "ok"}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("readyz_failed", error=str(exc))
         return {"status": "not_ready"}
 

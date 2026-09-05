@@ -30,9 +30,7 @@ def _extension_of(filename: str) -> str:
 
 def validate_upload(filename: str, content: bytes) -> None:
     if len(content) > MAX_FILE_BYTES:
-        raise UploadValidationError(
-            f"File exceeds size cap of {MAX_FILE_BYTES // (1024 * 1024)}MB"
-        )
+        raise UploadValidationError(f"File exceeds size cap of {MAX_FILE_BYTES // (1024 * 1024)}MB")
     ext = _extension_of(filename)
     if ext not in ALLOWED_EXTENSIONS:
         raise UploadValidationError(f"Unsupported file extension: .{ext or '?'}")

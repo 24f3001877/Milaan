@@ -56,7 +56,10 @@ def _make_run(session: Session) -> uuid.UUID:
 
 def test_full_pipeline_at_2000_records(db_session, tmp_path) -> None:
     batch = generate(
-        seed=123, record_count=2000, period_start=date(2026, 1, 1), period_end=date(2026, 1, 31),
+        seed=123,
+        record_count=2000,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
         pathology_weights=DEFAULT_WEIGHTS,
     )
     out_dir = tmp_path / "synth"
@@ -113,6 +116,7 @@ def test_full_pipeline_at_2000_records(db_session, tmp_path) -> None:
 
     # Every group with a bank_txn member must balance exactly (mirrors the DB trigger).
     from decimal import Decimal
+
     for g in result.groups:
         bank_members = [m for m in g.members if m.entity_type == "bank_txn"]
         if not bank_members:
@@ -122,4 +126,6 @@ def test_full_pipeline_at_2000_records(db_session, tmp_path) -> None:
             (m.allocated_amount.amount for m in g.members if m.entity_type == "settlement_line"),
             Decimal("0"),
         )
-        assert bank_total == settlement_total, f"group imbalance: {bank_total} != {settlement_total}"
+        assert bank_total == settlement_total, (
+            f"group imbalance: {bank_total} != {settlement_total}"
+        )

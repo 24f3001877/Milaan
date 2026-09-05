@@ -8,21 +8,47 @@ copies that can silently drift apart.
 from __future__ import annotations
 
 ORDER_FIELDS: tuple[str, ...] = (
-    "order_id", "invoice_no", "customer_ref", "gross", "currency",
-    "payment_id", "order_status", "created_at",
+    "order_id",
+    "invoice_no",
+    "customer_ref",
+    "gross",
+    "currency",
+    "payment_id",
+    "order_status",
+    "created_at",
 )
 ORDER_REQUIRED: tuple[str, ...] = ("order_id", "gross", "payment_id", "order_status", "created_at")
 
 SETTLEMENT_FIELDS: tuple[str, ...] = (
-    "settlement_id", "payment_id", "order_ref", "line_type", "gross", "fee", "tax", "net",
-    "instrument", "settled_on", "utr",
+    "settlement_id",
+    "payment_id",
+    "order_ref",
+    "line_type",
+    "gross",
+    "fee",
+    "tax",
+    "net",
+    "instrument",
+    "settled_on",
+    "utr",
 )
 SETTLEMENT_REQUIRED: tuple[str, ...] = (
-    "settlement_id", "line_type", "gross", "fee", "tax", "net", "settled_on"
+    "settlement_id",
+    "line_type",
+    "gross",
+    "fee",
+    "tax",
+    "net",
+    "settled_on",
 )
 
 BANK_FIELDS: tuple[str, ...] = (
-    "value_date", "narration", "utr_extracted", "credit", "debit", "balance"
+    "value_date",
+    "narration",
+    "utr_extracted",
+    "credit",
+    "debit",
+    "balance",
 )
 BANK_REQUIRED: tuple[str, ...] = ("value_date", "narration", "credit", "debit")
 

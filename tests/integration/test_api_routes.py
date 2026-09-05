@@ -46,7 +46,10 @@ def _make_completed_run(db_session, tmp_path: Path) -> uuid.UUID:
     from milaan.app.orchestrator.orchestrator import Orchestrator, SourceFileInput
 
     batch = generate(
-        seed=55, record_count=100, period_start=date(2026, 1, 1), period_end=date(2026, 1, 31),
+        seed=55,
+        record_count=100,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
         pathology_weights=DEFAULT_WEIGHTS,
     )
     data_dir = tmp_path / "synth"
@@ -55,7 +58,8 @@ def _make_completed_run(db_session, tmp_path: Path) -> uuid.UUID:
     run_id = uuid.uuid4()
     version = f"v-api-{uuid.uuid4().hex[:8]}"
     db_session.execute(
-        text("INSERT INTO ruleset (version, config, created_at) VALUES (:v, '{}', now())"), {"v": version}
+        text("INSERT INTO ruleset (version, config, created_at) VALUES (:v, '{}', now())"),
+        {"v": version},
     )
     db_session.execute(
         text(
@@ -70,16 +74,23 @@ def _make_completed_run(db_session, tmp_path: Path) -> uuid.UUID:
 
     sources = []
     for source_type, fname in [
-        ("orders", "orders.csv"), ("gateway_settlement", "gateway_settlement.csv"),
+        ("orders", "orders.csv"),
+        ("gateway_settlement", "gateway_settlement.csv"),
         ("bank_statement", "bank_statement.csv"),
     ]:
         content = (data_dir / fname).read_bytes()
         rows = read_rows(fname, content)
         mapping = propose_mapping(source_type, list(rows[0].keys())).mapping
-        sources.append(SourceFileInput(source_type=source_type, filename=fname, content=content, mapping=mapping))
+        sources.append(
+            SourceFileInput(
+                source_type=source_type, filename=fname, content=content, mapping=mapping
+            )
+        )
 
     llm_client = LLMClient(mode="disabled", cache_dir=tmp_path / "llm_cache")
-    orch = Orchestrator(db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version)
+    orch = Orchestrator(
+        db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version
+    )
     orch.run(sources)
     return run_id
 
@@ -134,25 +145,31 @@ def test_exception_approve_reject_are_idempotent_against_double_action(
 
     r1 = client.post(
         f"/api/v1/exceptions/{exc_id}/approve",
-        headers={**auth_headers, "Idempotency-Key": "k1"}, json={"action": "propose_match"},
+        headers={**auth_headers, "Idempotency-Key": "k1"},
+        json={"action": "propose_match"},
     )
     assert r1.status_code == 200
 
     r2 = client.post(
         f"/api/v1/exceptions/{exc_id}/approve",
-        headers={**auth_headers, "Idempotency-Key": "k1"}, json={"action": "propose_match"},
+        headers={**auth_headers, "Idempotency-Key": "k1"},
+        json={"action": "propose_match"},
     )
     assert r2.status_code == 409
 
 
-def test_approve_without_idempotency_key_is_rejected(client, auth_headers, db_session, tmp_path) -> None:
+def test_approve_without_idempotency_key_is_rejected(
+    client, auth_headers, db_session, tmp_path
+) -> None:
     run_id = _make_completed_run(db_session, tmp_path)
     r = client.get(f"/api/v1/runs/{run_id}/exceptions", headers=auth_headers, params={"limit": 1})
     exceptions = r.json()
     if not exceptions:
         pytest.skip("this seed produced no exceptions to test against")
     r2 = client.post(
-        f"/api/v1/exceptions/{exceptions[0]['id']}/approve", headers=auth_headers, json={"action": "propose_match"}
+        f"/api/v1/exceptions/{exceptions[0]['id']}/approve",
+        headers=auth_headers,
+        json={"action": "propose_match"},
     )
     assert r2.status_code == 400
 
@@ -164,11 +181,19 @@ def test_audit_verify_endpoint(client, auth_headers, db_session, tmp_path) -> No
     assert r.json()["valid"] is True
 
 
-def test_dev_seed_route_available_in_development(client, auth_headers, monkeypatch, tmp_path) -> None:
+def test_dev_seed_route_available_in_development(
+    client, auth_headers, monkeypatch, tmp_path
+) -> None:
     monkeypatch.chdir(tmp_path)
     r = client.post(
-        "/api/v1/dev/seed", headers=auth_headers,
-        json={"seed": 1, "record_count": 20, "period_start": "2026-01-01", "period_end": "2026-01-31"},
+        "/api/v1/dev/seed",
+        headers=auth_headers,
+        json={
+            "seed": 1,
+            "record_count": 20,
+            "period_start": "2026-01-01",
+            "period_end": "2026-01-31",
+        },
     )
     assert r.status_code == 200
     assert r.json()["order_count"] == 20

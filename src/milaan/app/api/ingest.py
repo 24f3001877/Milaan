@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -17,7 +17,9 @@ from milaan.adapters.ingest.parsers import UploadValidationError
 from milaan.adapters.ingest.service import preview_file
 from milaan.app.deps import get_db, require_bearer_token
 
-router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"], dependencies=[Depends(require_bearer_token)])
+router = APIRouter(
+    prefix="/api/v1/ingest", tags=["ingest"], dependencies=[Depends(require_bearer_token)]
+)
 
 
 class MappingConfirmRequest(BaseModel):
@@ -43,11 +45,13 @@ async def ingest_preview(
     upload_dir.mkdir(parents=True, exist_ok=True)
     (upload_dir / str(upload_id)).write_bytes(content)
     (upload_dir / f"{upload_id}.json").write_text(
-        json.dumps({
-            "filename": file.filename or "upload.csv",
-            "source_type": source_type,
-            "sha256": hashlib.sha256(content).hexdigest(),
-        })
+        json.dumps(
+            {
+                "filename": file.filename or "upload.csv",
+                "source_type": source_type,
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        )
         + "\n",
     )
 
@@ -98,9 +102,11 @@ def confirm_mapping(body: MappingConfirmRequest, db: Session = Depends(get_db)):
             "mapping = EXCLUDED.mapping, confirmed_by_human = true"
         ),
         {
-            "id": str(mapping_id), "st": body.source_type, "fp": body.fingerprint,
+            "id": str(mapping_id),
+            "st": body.source_type,
+            "fp": body.fingerprint,
             "mapping": json.dumps(body.mapping),
-            "conf": json.dumps({k: 1.0 for k in body.mapping}),
+            "conf": json.dumps(dict.fromkeys(body.mapping, 1.0)),
         },
     )
     db.commit()
@@ -117,9 +123,14 @@ def list_mappings(db: Session = Depends(get_db)):
     ).fetchall()
     return [
         {
-            "id": str(r.id), "source_type": r.source_type, "header_fingerprint": r.header_fingerprint,
-            "method": r.method, "confirmed_by_human": r.confirmed_by_human,
-            "created_at": r.created_at.isoformat() if isinstance(r.created_at, datetime) else r.created_at,
+            "id": str(r.id),
+            "source_type": r.source_type,
+            "header_fingerprint": r.header_fingerprint,
+            "method": r.method,
+            "confirmed_by_human": r.confirmed_by_human,
+            "created_at": r.created_at.isoformat()
+            if isinstance(r.created_at, datetime)
+            else r.created_at,
         }
         for r in rows
     ]

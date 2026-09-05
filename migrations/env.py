@@ -10,7 +10,7 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from milaan.adapters.db.models import Base  # noqa: E402
+from milaan.adapters.db.models import Base
 
 config = context.config
 

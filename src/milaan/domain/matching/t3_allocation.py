@@ -75,7 +75,8 @@ def match_t3(
     for bank in sorted(unmatched_banks, key=lambda b: (b.value_date, str(b.id))):
         window_start = bank.value_date - timedelta(days=date_window_days)
         candidates = [
-            line for line in unmatched_lines
+            line
+            for line in unmatched_lines
             if line.id not in used_line_ids and window_start <= line.settled_on <= bank.value_date
         ]
         candidates.sort(key=lambda line: (line.settled_on, line.settlement_id))
@@ -112,17 +113,23 @@ def match_t3(
                     target.add_member(m)
                 consumed_group_ids.add(id(other))
         else:
-            target = MatchGroupResult(tier="T3_ALLOCATION", confidence=T3_CONFIDENCE, rule_id=RULE_ID)
+            target = MatchGroupResult(
+                tier="T3_ALLOCATION", confidence=T3_CONFIDENCE, rule_id=RULE_ID
+            )
             new_groups.append(target)
 
         for line in chosen:
             target.add_member(
-                MatchMemberResult(entity_type="settlement_line", entity_id=line.id, allocated_amount=line.net)
+                MatchMemberResult(
+                    entity_type="settlement_line", entity_id=line.id, allocated_amount=line.net
+                )
             )
             used_line_ids.add(line.id)
             result.matched_settlement_line_ids.add(line.id)
         target.add_member(
-            MatchMemberResult(entity_type="bank_txn", entity_id=bank.id, allocated_amount=bank.credit)
+            MatchMemberResult(
+                entity_type="bank_txn", entity_id=bank.id, allocated_amount=bank.credit
+            )
         )
         target.confidence = T3_CONFIDENCE
         target.upgrade("T3_ALLOCATION", RULE_ID)

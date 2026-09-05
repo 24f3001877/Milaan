@@ -46,7 +46,10 @@ class MatchGroupResult:
         the group would fail the allocation-balance check by exactly the fee+tax delta —
         which is precisely the bug this method used to have."""
         for i, existing in enumerate(self.members):
-            if existing.entity_type == member.entity_type and existing.entity_id == member.entity_id:
+            if (
+                existing.entity_type == member.entity_type
+                and existing.entity_id == member.entity_id
+            ):
                 self.members[i] = member
                 return
         self.members.append(member)

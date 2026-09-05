@@ -51,7 +51,9 @@ def _make_run(session: Session) -> uuid.UUID:
     return run_id
 
 
-def _make_source_file(session: Session, run_id: uuid.UUID, source_type: str, filename: str) -> uuid.UUID:
+def _make_source_file(
+    session: Session, run_id: uuid.UUID, source_type: str, filename: str
+) -> uuid.UUID:
     sfid = uuid.uuid4()
     session.execute(
         text(
@@ -68,12 +70,16 @@ def _make_source_file(session: Session, run_id: uuid.UUID, source_type: str, fil
 def test_large_batch_ingest_survives_postgres_parameter_limit(db_session, tmp_path) -> None:
     """Regression test: a 5,000+ row settlement file previously blew past Postgres's
     65535-bound-parameters-per-statement ceiling. This proves the batching fix holds."""
-    from milaan.adapters.synthetic.generate import generate, write_outputs
     from datetime import date
 
+    from milaan.adapters.synthetic.generate import generate, write_outputs
+
     batch = generate(
-        seed=99, record_count=5000, period_start=date(2026, 1, 1),
-        period_end=date(2026, 1, 31), pathology_weights={"missing_in_bank": 1.0},
+        seed=99,
+        record_count=5000,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
+        pathology_weights={"missing_in_bank": 1.0},
         pathology_rate=0.1,
     )
     out_dir = tmp_path / "synth"
@@ -95,12 +101,16 @@ def test_large_batch_ingest_survives_postgres_parameter_limit(db_session, tmp_pa
 
 def test_reingesting_identical_batch_is_idempotent(db_session, tmp_path) -> None:
     """C4: re-submitting an identical batch produces zero duplicate rows."""
-    from milaan.adapters.synthetic.generate import generate, write_outputs
     from datetime import date
 
+    from milaan.adapters.synthetic.generate import generate, write_outputs
+
     batch = generate(
-        seed=7, record_count=300, period_start=date(2026, 1, 1),
-        period_end=date(2026, 1, 31), pathology_weights={"missing_in_bank": 1.0},
+        seed=7,
+        record_count=300,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
+        pathology_weights={"missing_in_bank": 1.0},
     )
     out_dir = tmp_path / "synth"
     write_outputs(batch, out_dir)

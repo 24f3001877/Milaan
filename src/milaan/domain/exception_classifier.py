@@ -93,7 +93,7 @@ def classify_exceptions(
         for sid in g.member_ids("settlement_line"):
             line_to_group_idx[sid] = idx
 
-    for line in sorted(settlement_lines, key=lambda l: l.settlement_id):
+    for line in sorted(settlement_lines, key=lambda settlement_line: settlement_line.settlement_id):
         group = cascade.groups[line_to_group_idx[line.id]] if line.id in line_to_group_idx else None
         # Precisely "does THIS line's own payment_id match an order in the group" — not
         # "does the group contain any order at all". The latter is wrong the same way the
@@ -115,9 +115,12 @@ def classify_exceptions(
         amount = _abs_money(line.net)
         records.append(
             ExceptionRecord(
-                category=category, severity=_severity_for_amount(amount),
-                entity_type="settlement_line", entity_id=line.id,
-                amount_at_risk=amount, deterministic_trace=trace,
+                category=category,
+                severity=_severity_for_amount(amount),
+                entity_type="settlement_line",
+                entity_id=line.id,
+                amount_at_risk=amount,
+                deterministic_trace=trace,
                 resolved_match_group_index=line_to_group_idx.get(line.id),
             )
         )
@@ -129,9 +132,12 @@ def classify_exceptions(
         amount = _abs_money(bank.credit)
         records.append(
             ExceptionRecord(
-                category=category, severity=_severity_for_amount(amount),
-                entity_type="bank_txn", entity_id=bank.id,
-                amount_at_risk=amount, deterministic_trace=trace,
+                category=category,
+                severity=_severity_for_amount(amount),
+                entity_type="bank_txn",
+                entity_id=bank.id,
+                amount_at_risk=amount,
+                deterministic_trace=trace,
             )
         )
 
@@ -147,9 +153,12 @@ def classify_exceptions(
         amount = _abs_money(order.gross)
         records.append(
             ExceptionRecord(
-                category="missing_in_gateway", severity=_severity_for_amount(amount),
-                entity_type="order", entity_id=order.id,
-                amount_at_risk=amount, deterministic_trace=trace,
+                category="missing_in_gateway",
+                severity=_severity_for_amount(amount),
+                entity_type="order",
+                entity_id=order.id,
+                amount_at_risk=amount,
+                deterministic_trace=trace,
             )
         )
 
@@ -169,9 +178,12 @@ def classify_exceptions(
         }
         records.append(
             ExceptionRecord(
-                category="fee_variance", severity=_severity_for_amount(amount),
-                entity_type="settlement_line", entity_id=r.settlement_line_id,
-                amount_at_risk=amount, deterministic_trace=trace,
+                category="fee_variance",
+                severity=_severity_for_amount(amount),
+                entity_type="settlement_line",
+                entity_id=r.settlement_line_id,
+                amount_at_risk=amount,
+                deterministic_trace=trace,
             )
         )
 
@@ -199,7 +211,8 @@ def classify_exceptions(
             if not order.payment_id:
                 continue
             own_lines = sorted(
-                lines_by_payment_id.get(order.payment_id, []), key=lambda l: l.settlement_id
+                lines_by_payment_id.get(order.payment_id, []),
+                key=lambda settlement_line: settlement_line.settlement_id,
             )
             if not own_lines:
                 continue  # this order's group membership came from a merge, not its own tie
@@ -216,9 +229,12 @@ def classify_exceptions(
                 }
                 records.append(
                     ExceptionRecord(
-                        category="amount_mismatch", severity=_severity_for_amount(delta),
-                        entity_type="settlement_line", entity_id=offending_line.id,
-                        amount_at_risk=delta, deterministic_trace=trace,
+                        category="amount_mismatch",
+                        severity=_severity_for_amount(delta),
+                        entity_type="settlement_line",
+                        entity_id=offending_line.id,
+                        amount_at_risk=delta,
+                        deterministic_trace=trace,
                         resolved_match_group_index=idx,
                     )
                 )
@@ -231,9 +247,12 @@ def classify_exceptions(
                     trace = {"settlement_line_count": len(own_lines)}
                     records.append(
                         ExceptionRecord(
-                            category="partial_settlement", severity="low",
-                            entity_type="settlement_line", entity_id=line.id,
-                            amount_at_risk=Money.zero(), deterministic_trace=trace,
+                            category="partial_settlement",
+                            severity="low",
+                            entity_type="settlement_line",
+                            entity_id=line.id,
+                            amount_at_risk=Money.zero(),
+                            deterministic_trace=trace,
                             resolved_match_group_index=idx,
                         )
                     )
@@ -290,9 +309,7 @@ def _classify_settlement_line(
     return "missing_in_bank", trace
 
 
-def _classify_unmatched_bank_txn(
-    bank: BankTxnEntity, ambiguous_utrs: set[str]
-) -> tuple[str, dict]:
+def _classify_unmatched_bank_txn(bank: BankTxnEntity, ambiguous_utrs: set[str]) -> tuple[str, dict]:
     trace: dict = {"tiers_attempted": ["T2", "T3"]}
     utr = extract_utr(bank.narration, bank.utr_extracted)
     normalized = normalize_utr(utr) if utr else None

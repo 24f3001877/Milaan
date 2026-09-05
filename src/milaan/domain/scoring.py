@@ -63,18 +63,24 @@ def links_from_groups(
                 for o in pid_orders:
                     for line in lines_by_pid.get(pid, []):
                         links.add(
-                            canonical_link_key("order", o.entity_id, "settlement_line", line.entity_id)
+                            canonical_link_key(
+                                "order", o.entity_id, "settlement_line", line.entity_id
+                            )
                         )
         else:
             # Safe fallback only when groups have at most one order (true in unit tests
             # that don't exercise the multi-order merge case).
             for o in orders:
                 for line in lines:
-                    links.add(canonical_link_key("order", o.entity_id, "settlement_line", line.entity_id))
+                    links.add(
+                        canonical_link_key("order", o.entity_id, "settlement_line", line.entity_id)
+                    )
 
         for line in lines:
             for b in banks:
-                links.add(canonical_link_key("settlement_line", line.entity_id, "bank_txn", b.entity_id))
+                links.add(
+                    canonical_link_key("settlement_line", line.entity_id, "bank_txn", b.entity_id)
+                )
     return links
 
 
@@ -109,7 +115,12 @@ def score(
     false_negative = true_links - predicted_links
 
     matched_settlement_lines = len(
-        {m.entity_id for g in predicted_groups for m in g.members if m.entity_type == "settlement_line"}
+        {
+            m.entity_id
+            for g in predicted_groups
+            for m in g.members
+            if m.entity_type == "settlement_line"
+        }
     )
 
     auto_match_rate = (

@@ -22,7 +22,9 @@ from milaan.app.tasks.celery_app import celery_app
 
 def _cancel_requested(session: Session, run_id: str) -> bool:
     row = session.execute(
-        text("SELECT 1 FROM audit_log WHERE run_id = :run_id AND action = 'cancel_requested' LIMIT 1"),
+        text(
+            "SELECT 1 FROM audit_log WHERE run_id = :run_id AND action = 'cancel_requested' LIMIT 1"
+        ),
         {"run_id": run_id},
     ).fetchone()
     return row is not None
@@ -61,19 +63,30 @@ def run_reconciliation(run_id_str: str) -> dict:
             content = (data_dir / str(file_row.id)).read_bytes()
             rows = read_rows(fname, content)
             mapping = propose_mapping(file_row.source_type, list(rows[0].keys())).mapping
-            sources.append(SourceFileInput(
-                source_type=file_row.source_type, filename=fname, content=content, mapping=mapping
-            ))
+            sources.append(
+                SourceFileInput(
+                    source_type=file_row.source_type,
+                    filename=fname,
+                    content=content,
+                    mapping=mapping,
+                )
+            )
 
         llm_client = LLMClient(
-            mode=run_row.llm_mode, cache_dir=Path("data/llm_cache"),
-            model=settings.llm_model, prompt_version=settings.llm_prompt_version,
-            provider=settings.llm_provider, api_key=settings.llm_api_key or None,
+            mode=run_row.llm_mode,
+            cache_dir=Path("data/llm_cache"),
+            model=settings.llm_model,
+            prompt_version=settings.llm_prompt_version,
+            provider=settings.llm_provider,
+            api_key=settings.llm_api_key or None,
         )
 
         orch = Orchestrator(
-            session, uuid.UUID(run_id_str), llm_client,
-            period_start=run_row.period_start, period_end=run_row.period_end,
+            session,
+            uuid.UUID(run_id_str),
+            llm_client,
+            period_start=run_row.period_start,
+            period_end=run_row.period_end,
             ruleset_version=run_row.ruleset_version,
             cancel_check=lambda: _cancel_requested(session, run_id_str),
         )
@@ -81,7 +94,10 @@ def run_reconciliation(run_id_str: str) -> dict:
 
         if not result.cancelled:
             session.execute(
-                text("UPDATE recon_run SET status = 'completed' WHERE id = :id AND status != 'cancelled'"),
+                text(
+                    "UPDATE recon_run SET status = 'completed' "
+                    "WHERE id = :id AND status != 'cancelled'"
+                ),
                 {"id": run_id_str},
             )
             session.commit()

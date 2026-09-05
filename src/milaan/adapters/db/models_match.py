@@ -29,7 +29,10 @@ class MatchGroup(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     tier: Mapped[MatchTier] = mapped_column(nullable=False)
     confidence: Mapped[float] = mapped_column(
@@ -46,7 +49,7 @@ class MatchGroup(Base):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     decided_by: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    members: Mapped[list["MatchMember"]] = relationship(
+    members: Mapped[list[MatchMember]] = relationship(
         back_populates="group", cascade="all, delete-orphan"
     )
 

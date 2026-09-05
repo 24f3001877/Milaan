@@ -28,12 +28,23 @@ def test_canonical_link_key_is_order_independent() -> None:
 def test_links_from_groups_extracts_order_settlement_and_settlement_bank_pairs() -> None:
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("100.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("100.00"), net=Money("97.00"), utr="UTR1", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("100.00"),
+        net=Money("97.00"),
+        utr="UTR1",
+        settled_on=D,
     )
     bank = BankTxnEntity(
-        id=uid(), value_date=D, narration="NEFT CR UTR1", utr_extracted="UTR1",
-        credit=Money("97.00"), debit=Money("0.00"),
+        id=uid(),
+        value_date=D,
+        narration="NEFT CR UTR1",
+        utr_extracted="UTR1",
+        credit=Money("97.00"),
+        debit=Money("0.00"),
     )
     result = run_t1_t2_t3([order], [line], [bank])
     links = links_from_groups(result.groups)
@@ -51,16 +62,34 @@ def test_links_from_groups_does_not_cross_product_multi_order_merged_group() -> 
     o1 = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("50.00"))
     o2 = OrderEntity(id=uid(), order_id="O2", payment_id="p2", gross=Money("30.00"))
     l1 = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("50.00"), net=Money("49.00"), utr="UTR-DAY", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("50.00"),
+        net=Money("49.00"),
+        utr="UTR-DAY",
+        settled_on=D,
     )
     l2 = SettlementLineEntity(
-        id=uid(), settlement_id="S2", payment_id="p2", order_ref="O2", line_type="payment",
-        gross=Money("30.00"), net=Money("29.40"), utr="UTR-DAY", settled_on=D,
+        id=uid(),
+        settlement_id="S2",
+        payment_id="p2",
+        order_ref="O2",
+        line_type="payment",
+        gross=Money("30.00"),
+        net=Money("29.40"),
+        utr="UTR-DAY",
+        settled_on=D,
     )
     bank = BankTxnEntity(
-        id=uid(), value_date=D, narration="NEFT CR UTR-DAY", utr_extracted="UTR-DAY",
-        credit=Money("78.40"), debit=Money("0.00"),
+        id=uid(),
+        value_date=D,
+        narration="NEFT CR UTR-DAY",
+        utr_extracted="UTR-DAY",
+        credit=Money("78.40"),
+        debit=Money("0.00"),
     )
     result = run_t1_t2_t3([o1, o2], [l1, l2], [bank])
     assert len(result.groups) == 1, "sanity check: this really is one merged group"
@@ -79,20 +108,35 @@ def test_links_from_groups_does_not_cross_product_multi_order_merged_group() -> 
 def test_score_perfect_match_has_zero_false_match_rate() -> None:
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("100.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("100.00"), net=Money("97.00"), utr="UTR1", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("100.00"),
+        net=Money("97.00"),
+        utr="UTR1",
+        settled_on=D,
     )
     bank = BankTxnEntity(
-        id=uid(), value_date=D, narration="NEFT CR UTR1", utr_extracted="UTR1",
-        credit=Money("97.00"), debit=Money("0.00"),
+        id=uid(),
+        value_date=D,
+        narration="NEFT CR UTR1",
+        utr_extracted="UTR1",
+        credit=Money("97.00"),
+        debit=Money("0.00"),
     )
     result = run_t1_t2_t3([order], [line], [bank])
     true_links = links_from_groups(result.groups)  # ground truth agrees perfectly here
 
     s = score(
-        predicted_groups=result.groups, true_links=true_links, total_settlement_lines=1,
-        total_settlement_value=line.gross, matched_settlement_value=line.gross,
-        exception_count=0, total_records=1,
+        predicted_groups=result.groups,
+        true_links=true_links,
+        total_settlement_lines=1,
+        total_settlement_value=line.gross,
+        matched_settlement_value=line.gross,
+        exception_count=0,
+        total_records=1,
     )
     assert s.auto_match_rate == 1.0
     assert s.false_match_rate == 0.0
@@ -102,16 +146,27 @@ def test_score_perfect_match_has_zero_false_match_rate() -> None:
 def test_score_detects_false_positive_link() -> None:
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("100.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("100.00"), net=Money("97.00"), utr="UTR1", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("100.00"),
+        net=Money("97.00"),
+        utr="UTR1",
+        settled_on=D,
     )
     result = run_t1_t2_t3([order], [line], [])
     predicted_links = links_from_groups(result.groups)
     # Ground truth says this link is WRONG (empty truth set) — simulates a genuine mismatch.
     s = score(
-        predicted_groups=result.groups, true_links=set(), total_settlement_lines=1,
-        total_settlement_value=line.gross, matched_settlement_value=line.gross,
-        exception_count=0, total_records=1,
+        predicted_groups=result.groups,
+        true_links=set(),
+        total_settlement_lines=1,
+        total_settlement_value=line.gross,
+        matched_settlement_value=line.gross,
+        exception_count=0,
+        total_records=1,
     )
     assert s.false_positive_links == len(predicted_links)
     assert s.false_match_rate == 1.0
@@ -121,9 +176,13 @@ def test_score_detects_false_negative_when_nothing_predicted() -> None:
     order_id, line_id = uid(), uid()
     true_links = {canonical_link_key("order", order_id, "settlement_line", line_id)}
     s = score(
-        predicted_groups=[], true_links=true_links, total_settlement_lines=1,
-        total_settlement_value=Money("100.00"), matched_settlement_value=Money("0.00"),
-        exception_count=1, total_records=1,
+        predicted_groups=[],
+        true_links=true_links,
+        total_settlement_lines=1,
+        total_settlement_value=Money("100.00"),
+        matched_settlement_value=Money("0.00"),
+        exception_count=1,
+        total_records=1,
     )
     assert s.false_negative_links == 1
     assert s.auto_match_rate == 0.0
@@ -131,15 +190,27 @@ def test_score_detects_false_negative_when_nothing_predicted() -> None:
 
 # --- naive baseline ------------------------------------------------------------------
 
+
 def test_naive_baseline_matches_clean_1to1_case() -> None:
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("100.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("100.00"), net=Money("97.00"), utr="UTR1", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("100.00"),
+        net=Money("97.00"),
+        utr="UTR1",
+        settled_on=D,
     )
     bank = BankTxnEntity(
-        id=uid(), value_date=D, narration="NEFT CR UTR1", utr_extracted="UTR1",
-        credit=Money("97.00"), debit=Money("0.00"),
+        id=uid(),
+        value_date=D,
+        narration="NEFT CR UTR1",
+        utr_extracted="UTR1",
+        credit=Money("97.00"),
+        debit=Money("0.00"),
     )
     groups = naive_match([order], [line], [bank])
     links = links_from_groups(groups)
@@ -151,12 +222,26 @@ def test_naive_baseline_fails_on_partial_settlement() -> None:
     """The whole point of the baseline: it cannot handle 1 order -> 2 settlement lines."""
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("100.00"))
     line_a = SettlementLineEntity(
-        id=uid(), settlement_id="S1A", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("60.00"), net=Money("58.00"), utr=None, settled_on=D,
+        id=uid(),
+        settlement_id="S1A",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("60.00"),
+        net=Money("58.00"),
+        utr=None,
+        settled_on=D,
     )
     line_b = SettlementLineEntity(
-        id=uid(), settlement_id="S1B", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("40.00"), net=Money("39.00"), utr=None, settled_on=D,
+        id=uid(),
+        settlement_id="S1B",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("40.00"),
+        net=Money("39.00"),
+        utr=None,
+        settled_on=D,
     )
     groups = naive_match([order], [line_a, line_b], [])
     assert groups == []  # naive baseline correctly (for it) matches nothing here
@@ -167,16 +252,34 @@ def test_naive_baseline_fails_on_many_to_one_bank_credit() -> None:
     o1 = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("50.00"))
     o2 = OrderEntity(id=uid(), order_id="O2", payment_id="p2", gross=Money("30.00"))
     l1 = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref="O1", line_type="payment",
-        gross=Money("50.00"), net=Money("49.00"), utr="UTR-DAY", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type="payment",
+        gross=Money("50.00"),
+        net=Money("49.00"),
+        utr="UTR-DAY",
+        settled_on=D,
     )
     l2 = SettlementLineEntity(
-        id=uid(), settlement_id="S2", payment_id="p2", order_ref="O2", line_type="payment",
-        gross=Money("30.00"), net=Money("29.40"), utr="UTR-DAY", settled_on=D,
+        id=uid(),
+        settlement_id="S2",
+        payment_id="p2",
+        order_ref="O2",
+        line_type="payment",
+        gross=Money("30.00"),
+        net=Money("29.40"),
+        utr="UTR-DAY",
+        settled_on=D,
     )
     bank = BankTxnEntity(
-        id=uid(), value_date=D, narration="NEFT CR UTR-DAY", utr_extracted="UTR-DAY",
-        credit=Money("78.40"), debit=Money("0.00"),
+        id=uid(),
+        value_date=D,
+        narration="NEFT CR UTR-DAY",
+        utr_extracted="UTR-DAY",
+        credit=Money("78.40"),
+        debit=Money("0.00"),
     )
     groups = naive_match([o1, o2], [l1, l2], [bank])
     links = links_from_groups(groups)

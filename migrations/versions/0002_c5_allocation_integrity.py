@@ -26,21 +26,19 @@ carrying constraint C5 (Schema §5.4):
 
 from __future__ import annotations
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "1c80198d6308"
-down_revision: Union[str, None] = "71fc580c5fd8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "71fc580c5fd8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # --- 1. Active-membership integrity (no double allocation) -----------------------
-    op.execute(
-        "ALTER TABLE match_member ADD COLUMN is_active_member BOOLEAN NOT NULL DEFAULT true"
-    )
+    op.execute("ALTER TABLE match_member ADD COLUMN is_active_member BOOLEAN NOT NULL DEFAULT true")
 
     op.execute(
         """
@@ -145,9 +143,7 @@ def upgrade() -> None:
         """
     )
     op.execute("GRANT USAGE ON SCHEMA public TO milaan_app")
-    op.execute(
-        "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO milaan_app"
-    )
+    op.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO milaan_app")
     op.execute("GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO milaan_app")
     op.execute("REVOKE UPDATE, DELETE ON audit_log FROM milaan_app")
 

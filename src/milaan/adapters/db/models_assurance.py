@@ -35,7 +35,10 @@ class LLMCall(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     purpose: Mapped[LLMPurpose] = mapped_column(nullable=False)
     model: Mapped[str] = mapped_column(Text, nullable=False)
@@ -86,7 +89,10 @@ class GroundTruthLink(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     entity_type_a: Mapped[EntityType] = mapped_column(nullable=False)
     entity_id_a: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
@@ -109,7 +115,10 @@ class EvalMetric(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     metric_name: Mapped[str] = mapped_column(Text, nullable=False)
     metric_value: Mapped[float] = mapped_column(Numeric(20, 6), nullable=False)

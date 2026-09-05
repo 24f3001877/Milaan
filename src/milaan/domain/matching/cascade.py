@@ -38,7 +38,9 @@ def run_t1_t2_t3(
     # line that's already in *some* group here was a real bug: it silently starved T3 of
     # exactly the lines it exists to help (malformed/missing UTR after a valid T1 match).
     groups_with_bank_tie = [g for g in t2.groups if g.member_ids("bank_txn")]
-    lines_with_bank_tie = {eid for g in groups_with_bank_tie for eid in g.member_ids("settlement_line")}
+    lines_with_bank_tie = {
+        eid for g in groups_with_bank_tie for eid in g.member_ids("settlement_line")
+    }
     banks_already_tied = {eid for g in groups_with_bank_tie for eid in g.member_ids("bank_txn")}
 
     still_unmatched_lines = [sl for sl in settlement_lines if sl.id not in lines_with_bank_tie]
@@ -54,7 +56,9 @@ def run_t1_t2_t3(
     }
     final_matched_bank_ids = {eid for g in t3.groups for eid in g.member_ids("bank_txn")}
 
-    unmatched_settlement_line_ids = {sl.id for sl in settlement_lines} - final_matched_settlement_ids
+    unmatched_settlement_line_ids = {
+        sl.id for sl in settlement_lines
+    } - final_matched_settlement_ids
     unmatched_bank_txn_ids = {b.id for b in bank_txns} - final_matched_bank_ids
 
     return CascadeResult(

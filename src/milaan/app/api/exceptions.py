@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 from milaan.adapters.audit.audit_log import append_entry
 from milaan.app.deps import get_db, require_bearer_token
 
-router = APIRouter(prefix="/api/v1", tags=["exceptions"], dependencies=[Depends(require_bearer_token)])
+router = APIRouter(
+    prefix="/api/v1", tags=["exceptions"], dependencies=[Depends(require_bearer_token)]
+)
 
 BULK_APPROVE_MAX = 50
 BULK_APPROVE_MIN_CONFIDENCE = 0.85
@@ -22,9 +24,13 @@ def _money(value) -> str | None:
 
 @router.get("/runs/{run_id}/exceptions")
 def list_exceptions(
-    run_id: str, db: Session = Depends(get_db),
-    category: str | None = None, status: str | None = None, severity: str | None = None,
-    limit: int = 50, cursor: str | None = None,
+    run_id: str,
+    db: Session = Depends(get_db),
+    category: str | None = None,
+    status: str | None = None,
+    severity: str | None = None,
+    limit: int = 50,
+    cursor: str | None = None,
 ):
     conditions = ["run_id = :run_id"]
     params: dict = {"run_id": run_id, "limit": limit}
@@ -52,10 +58,15 @@ def list_exceptions(
     ).fetchall()
     return [
         {
-            "id": str(r.id), "category": r.category, "severity": r.severity,
-            "entity_type": r.entity_type, "entity_id": str(r.entity_id),
-            "amount_at_risk": _money(r.amount_at_risk), "confidence": float(r.confidence) if r.confidence else None,
-            "proposed_action": r.proposed_action, "status": r.status,
+            "id": str(r.id),
+            "category": r.category,
+            "severity": r.severity,
+            "entity_type": r.entity_type,
+            "entity_id": str(r.entity_id),
+            "amount_at_risk": _money(r.amount_at_risk),
+            "confidence": float(r.confidence) if r.confidence else None,
+            "proposed_action": r.proposed_action,
+            "status": r.status,
         }
         for r in rows
     ]
@@ -75,13 +86,23 @@ def get_exception(exception_id: str, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(status_code=404, detail="exception not found")
     return {
-        "id": str(row.id), "run_id": str(row.run_id), "category": row.category, "severity": row.severity,
-        "entity_type": row.entity_type, "entity_id": str(row.entity_id),
-        "amount_at_risk": _money(row.amount_at_risk), "deterministic_trace": row.deterministic_trace,
-        "candidates": row.candidates, "hypothesis": row.hypothesis, "proposed_action": row.proposed_action,
-        "action_payload": row.action_payload, "confidence": float(row.confidence) if row.confidence else None,
-        "rationale": row.rationale, "llm_call_id": str(row.llm_call_id) if row.llm_call_id else None,
-        "status": row.status, "reject_reason_code": row.reject_reason_code,
+        "id": str(row.id),
+        "run_id": str(row.run_id),
+        "category": row.category,
+        "severity": row.severity,
+        "entity_type": row.entity_type,
+        "entity_id": str(row.entity_id),
+        "amount_at_risk": _money(row.amount_at_risk),
+        "deterministic_trace": row.deterministic_trace,
+        "candidates": row.candidates,
+        "hypothesis": row.hypothesis,
+        "proposed_action": row.proposed_action,
+        "action_payload": row.action_payload,
+        "confidence": float(row.confidence) if row.confidence else None,
+        "rationale": row.rationale,
+        "llm_call_id": str(row.llm_call_id) if row.llm_call_id else None,
+        "status": row.status,
+        "reject_reason_code": row.reject_reason_code,
     }
 
 
@@ -103,7 +124,9 @@ def _require_idempotency_key(idempotency_key: str | None) -> None:
 
 @router.post("/exceptions/{exception_id}/approve")
 def approve_exception(
-    exception_id: str, body: ApproveRequest, db: Session = Depends(get_db),
+    exception_id: str,
+    body: ApproveRequest,
+    db: Session = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     _require_idempotency_key(idempotency_key)
@@ -127,8 +150,13 @@ def approve_exception(
         {"id": exception_id},
     )
     append_entry(
-        db, "operator", "exception_approved", "exception_item", exception_id,
-        {"action": body.action, "note": body.note}, run_id=row.run_id,
+        db,
+        "operator",
+        "exception_approved",
+        "exception_item",
+        exception_id,
+        {"action": body.action, "note": body.note},
+        run_id=row.run_id,
     )
     db.commit()
     return {"status": "approved"}
@@ -152,8 +180,13 @@ def reject_exception(exception_id: str, body: RejectRequest, db: Session = Depen
         {"id": exception_id, "reason": body.reason_code},
     )
     append_entry(
-        db, "operator", "exception_rejected", "exception_item", exception_id,
-        {"reason_code": body.reason_code, "note": body.note}, run_id=row.run_id,
+        db,
+        "operator",
+        "exception_rejected",
+        "exception_item",
+        exception_id,
+        {"reason_code": body.reason_code, "note": body.note},
+        run_id=row.run_id,
     )
     db.commit()
     return {"status": "rejected"}
@@ -169,8 +202,12 @@ def escalate_exception(exception_id: str, db: Session = Depends(get_db)):
     if row.status != "open":
         raise HTTPException(status_code=409, detail=f"exception already {row.status}")
 
-    db.execute(text("UPDATE exception_item SET status = 'escalated' WHERE id = :id"), {"id": exception_id})
-    append_entry(db, "operator", "exception_escalated", "exception_item", exception_id, {}, run_id=row.run_id)
+    db.execute(
+        text("UPDATE exception_item SET status = 'escalated' WHERE id = :id"), {"id": exception_id}
+    )
+    append_entry(
+        db, "operator", "exception_escalated", "exception_item", exception_id, {}, run_id=row.run_id
+    )
     db.commit()
     return {"status": "escalated"}
 
@@ -182,19 +219,23 @@ class BulkApproveRequest(BaseModel):
 
 @router.post("/exceptions/bulk-approve")
 def bulk_approve(
-    body: BulkApproveRequest, db: Session = Depends(get_db),
+    body: BulkApproveRequest,
+    db: Session = Depends(get_db),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     _require_idempotency_key(idempotency_key)
     if len(body.ids) > BULK_APPROVE_MAX:
-        raise HTTPException(status_code=422, detail=f"cannot bulk-approve more than {BULK_APPROVE_MAX} at once")
+        raise HTTPException(
+            status_code=422, detail=f"cannot bulk-approve more than {BULK_APPROVE_MAX} at once"
+        )
 
     rows = db.execute(
         text("SELECT id, run_id, status, confidence FROM exception_item WHERE id = ANY(:ids)"),
         {"ids": body.ids},
     ).fetchall()
     below_threshold = [
-        str(r.id) for r in rows
+        str(r.id)
+        for r in rows
         if r.confidence is None or float(r.confidence) < BULK_APPROVE_MIN_CONFIDENCE
     ]
     if below_threshold:
@@ -217,8 +258,13 @@ def bulk_approve(
             {"id": str(r.id)},
         )
         append_entry(
-            db, "operator", "exception_approved", "exception_item", str(r.id),
-            {"action": body.action, "bulk": True}, run_id=r.run_id,
+            db,
+            "operator",
+            "exception_approved",
+            "exception_item",
+            str(r.id),
+            {"action": body.action, "bulk": True},
+            run_id=r.run_id,
         )
         approved.append(str(r.id))
     db.commit()

@@ -45,7 +45,10 @@ class ExceptionItem(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     category: Mapped[ExceptionCategory] = mapped_column(nullable=False)
     severity: Mapped[Severity] = mapped_column(nullable=False)
@@ -113,7 +116,10 @@ class FeeVariance(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     settlement_line_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("settlement_line.id"), nullable=False, unique=True

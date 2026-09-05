@@ -21,9 +21,9 @@ import hashlib
 import json
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Callable
 
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -109,9 +109,13 @@ class Orchestrator:
             {"state": state.value, "run_id": str(self.run_id)},
         )
         append_entry(
-            self.session, actor="orchestrator", action="state_transition",
-            entity_type="recon_run", entity_id=self.run_id,
-            payload={"state": state.value, **payload}, run_id=self.run_id,
+            self.session,
+            actor="orchestrator",
+            action="state_transition",
+            entity_type="recon_run",
+            entity_id=self.run_id,
+            payload={"state": state.value, **payload},
+            run_id=self.run_id,
         )
         self.session.commit()
 
@@ -139,14 +143,20 @@ class Orchestrator:
         for src in sources:
             sfid = self._ensure_source_file_row(src)
             rows = read_rows(src.filename, src.content)
-            summary = ingest_rows(self.session, self.run_id, sfid, src.source_type, rows, src.mapping)
+            summary = ingest_rows(
+                self.session, self.run_id, sfid, src.source_type, rows, src.mapping
+            )
             self.session.commit()
             ingest_summaries[src.source_type] = summary
 
         self._transition(
             OrchestratorState.VALIDATE,
             ingest_summaries={
-                k: {"total": v.total_rows, "inserted": v.inserted, "errors": len(v.validation_errors)}
+                k: {
+                    "total": v.total_rows,
+                    "inserted": v.inserted,
+                    "errors": len(v.validation_errors),
+                }
                 for k, v in ingest_summaries.items()
             },
         )
@@ -174,7 +184,9 @@ class Orchestrator:
 
         self._transition(OrchestratorState.MATCH_T3, t2_groups=len(t2.groups))
         groups_with_bank_tie = [g for g in t2.groups if g.member_ids("bank_txn")]
-        lines_with_bank_tie = {eid for g in groups_with_bank_tie for eid in g.member_ids("settlement_line")}
+        lines_with_bank_tie = {
+            eid for g in groups_with_bank_tie for eid in g.member_ids("settlement_line")
+        }
         banks_already_tied = {eid for g in groups_with_bank_tie for eid in g.member_ids("bank_txn")}
         still_unmatched_lines = [sl for sl in settlement_lines if sl.id not in lines_with_bank_tie]
         still_unmatched_banks = [b for b in bank_txns if b.id not in banks_already_tied]
@@ -194,8 +206,13 @@ class Orchestrator:
         self._transition(OrchestratorState.CLASSIFY_EXCEPTIONS)
         cascade_result = _cascade_result_from(t3.groups, settlement_lines, bank_txns, t1, t2)
         exceptions = classify_exceptions(
-            orders, settlement_lines, bank_txns, cascade_result, fee_records,
-            self.period_start, self.period_end,
+            orders,
+            settlement_lines,
+            bank_txns,
+            cascade_result,
+            fee_records,
+            self.period_start,
+            self.period_end,
         )
         triaged = [TriagedException(exception=e) for e in exceptions]
         deterministic_elapsed = time.monotonic() - deterministic_started
@@ -216,7 +233,9 @@ class Orchestrator:
         for te in triaged:
             if self.cancel_check():
                 break
-            record_fields = _record_fields_for(te.exception, settlement_by_id, order_by_id, bank_by_id)
+            record_fields = _record_fields_for(
+                te.exception, settlement_by_id, order_by_id, bank_by_id
+            )
             try:
                 proposal, call_record = triage_exception(
                     te.exception, record_fields, valid_ids, self.llm_client
@@ -243,8 +262,11 @@ class Orchestrator:
                 if te.hypothesis is None or self.cancel_check():
                     continue
                 triage_proposal = TriageProposal(
-                    hypothesis=te.hypothesis, proposed_action=te.proposed_action,
-                    confidence=te.confidence, rationale=te.rationale, referenced_record_ids=[],
+                    hypothesis=te.hypothesis,
+                    proposed_action=te.proposed_action,
+                    confidence=te.confidence,
+                    rationale=te.rationale,
+                    referenced_record_ids=[],
                 )
                 try:
                     explanation, call_record = explain_exception(
@@ -294,7 +316,10 @@ class Orchestrator:
 
         self._transition(OrchestratorState.AWAIT_REVIEW)
         self.session.execute(
-            text("UPDATE recon_run SET status = 'awaiting_review', finished_at = now() WHERE id = :run_id"),
+            text(
+                "UPDATE recon_run SET status = 'awaiting_review', finished_at = now() "
+                "WHERE id = :run_id"
+            ),
             {"run_id": str(self.run_id)},
         )
         self.session.commit()
@@ -309,7 +334,10 @@ class Orchestrator:
 
     def _ensure_source_file_row(self, src: SourceFileInput) -> uuid.UUID:
         existing = self.session.execute(
-            text("SELECT id FROM data_source_file WHERE run_id = :run_id AND source_type = :source_type"),
+            text(
+                "SELECT id FROM data_source_file "
+                "WHERE run_id = :run_id AND source_type = :source_type"
+            ),
             {"run_id": str(self.run_id), "source_type": src.source_type},
         ).fetchone()
         if existing:
@@ -322,8 +350,13 @@ class Orchestrator:
                 "content_sha256, row_count, ingested_at) VALUES "
                 "(:id, :run_id, :st, :fn, :hash, 0, now())"
             ),
-            {"id": str(sfid), "run_id": str(self.run_id), "st": src.source_type,
-             "fn": src.filename, "hash": content_hash},
+            {
+                "id": str(sfid),
+                "run_id": str(self.run_id),
+                "st": src.source_type,
+                "fn": src.filename,
+                "hash": content_hash,
+            },
         )
         self.session.commit()
         return sfid
@@ -343,8 +376,14 @@ class Orchestrator:
                     "ruleset_version, created_at) VALUES "
                     "(:id, :run_id, :tier, :conf, 'pending_review', :rule_id, :rv, now())"
                 ),
-                {"id": str(gid), "run_id": str(self.run_id), "tier": g.tier,
-                 "conf": str(g.confidence), "rule_id": g.rule_id, "rv": self.ruleset_version},
+                {
+                    "id": str(gid),
+                    "run_id": str(self.run_id),
+                    "tier": g.tier,
+                    "conf": str(g.confidence),
+                    "rule_id": g.rule_id,
+                    "rv": self.ruleset_version,
+                },
             )
             for m in g.members:
                 self.session.execute(
@@ -352,9 +391,14 @@ class Orchestrator:
                         "INSERT INTO match_member (id, group_id, entity_type, entity_id, "
                         "allocated_amount, run_id) VALUES (:id, :gid, :et, :eid, :amt, :run_id)"
                     ),
-                    {"id": str(uuid.uuid4()), "gid": str(gid), "et": m.entity_type,
-                     "eid": str(m.entity_id), "amt": str(m.allocated_amount.amount),
-                     "run_id": str(self.run_id)},
+                    {
+                        "id": str(uuid.uuid4()),
+                        "gid": str(gid),
+                        "et": m.entity_type,
+                        "eid": str(m.entity_id),
+                        "amt": str(m.allocated_amount.amount),
+                        "run_id": str(self.run_id),
+                    },
                 )
 
     def _persist_fee_variances(self, records: list[FeeVarianceRecord]) -> None:
@@ -367,11 +411,17 @@ class Orchestrator:
                     "(:id, :run_id, :slid, :ef, :et, :rf, :rt, :delta, :rv, :wt, :inst)"
                 ),
                 {
-                    "id": str(uuid.uuid4()), "run_id": str(self.run_id),
-                    "slid": str(r.settlement_line_id), "ef": str(r.expected_fee.amount),
-                    "et": str(r.expected_tax.amount), "rf": str(r.reported_fee.amount),
-                    "rt": str(r.reported_tax.amount), "delta": str(r.delta.amount),
-                    "rv": r.rate_card_version, "wt": r.within_tolerance, "inst": r.instrument_resolved,
+                    "id": str(uuid.uuid4()),
+                    "run_id": str(self.run_id),
+                    "slid": str(r.settlement_line_id),
+                    "ef": str(r.expected_fee.amount),
+                    "et": str(r.expected_tax.amount),
+                    "rf": str(r.reported_fee.amount),
+                    "rt": str(r.reported_tax.amount),
+                    "delta": str(r.delta.amount),
+                    "rv": r.rate_card_version,
+                    "wt": r.within_tolerance,
+                    "inst": r.instrument_resolved,
                 },
             )
 
@@ -387,11 +437,17 @@ class Orchestrator:
                     ":action, :conf, :rat, :llm_call_id, 'open')"
                 ),
                 {
-                    "id": str(uuid.uuid4()), "run_id": str(self.run_id), "cat": e.category,
-                    "sev": e.severity, "et": e.entity_type, "eid": str(e.entity_id),
+                    "id": str(uuid.uuid4()),
+                    "run_id": str(self.run_id),
+                    "cat": e.category,
+                    "sev": e.severity,
+                    "et": e.entity_type,
+                    "eid": str(e.entity_id),
                     "amt": str(e.amount_at_risk.amount),
                     "trace": json.dumps(e.deterministic_trace, default=str),
-                    "hyp": te.hypothesis, "action": te.proposed_action, "conf": te.confidence,
+                    "hyp": te.hypothesis,
+                    "action": te.proposed_action,
+                    "conf": te.confidence,
                     "rat": te.rationale,
                     "llm_call_id": str(te.triage_llm_call_id) if te.triage_llm_call_id else None,
                 },
@@ -417,16 +473,22 @@ class Orchestrator:
         `python -m milaan.eval.run` on a seeded batch instead, and the dashboard says so
         rather than rendering an em-dash that could be misread as "zero".
         """
-        matched_ids = {m.entity_id for g in groups for m in g.members if m.entity_type == "settlement_line"}
+        matched_ids = {
+            m.entity_id for g in groups for m in g.members if m.entity_type == "settlement_line"
+        }
         matched_value = (
             Money.sum([s.gross for s in settlement_lines if s.id in matched_ids])
-            if matched_ids else Money.zero()
+            if matched_ids
+            else Money.zero()
         )
-        total_value = Money.sum([s.gross for s in settlement_lines]) if settlement_lines else Money.zero()
+        total_value = (
+            Money.sum([s.gross for s in settlement_lines]) if settlement_lines else Money.zero()
+        )
         auto_match_rate = len(matched_ids) / len(settlement_lines) if settlement_lines else 0.0
         value_explained_pct = (
             round(float(matched_value.amount / total_value.amount), 6)
-            if total_value.amount != 0 else 0.0
+            if total_value.amount != 0
+            else 0.0
         )
 
         # The naive exact-ID baseline the headline claim is measured against (UI/UX §3.3:
@@ -435,11 +497,15 @@ class Orchestrator:
         # linear pass — see domain/matching/baseline.py for why it scores poorly.
         baseline_groups = naive_match(orders, settlement_lines, bank_txns)
         baseline_matched_ids = {
-            m.entity_id for g in baseline_groups for m in g.members if m.entity_type == "settlement_line"
+            m.entity_id
+            for g in baseline_groups
+            for m in g.members
+            if m.entity_type == "settlement_line"
         }
         baseline_matched_value = (
             Money.sum([s.gross for s in settlement_lines if s.id in baseline_matched_ids])
-            if baseline_matched_ids else Money.zero()
+            if baseline_matched_ids
+            else Money.zero()
         )
 
         matched_by_tier: dict[str, int] = {}
@@ -450,8 +516,12 @@ class Orchestrator:
         # rate, so on its own it says nothing about how much of the bank statement was
         # actually tied — the dashboard shows all three so the headline cannot be misread
         # as "the bank side reconciled too".
-        matched_order_ids = {m.entity_id for g in groups for m in g.members if m.entity_type == "order"}
-        matched_bank_ids = {m.entity_id for g in groups for m in g.members if m.entity_type == "bank_txn"}
+        matched_order_ids = {
+            m.entity_id for g in groups for m in g.members if m.entity_type == "order"
+        }
+        matched_bank_ids = {
+            m.entity_id for g in groups for m in g.members if m.entity_type == "bank_txn"
+        }
 
         exceptions_by_category: dict[str, int] = {}
         for te in triaged:
@@ -459,7 +529,9 @@ class Orchestrator:
             exceptions_by_category[cat] = exceptions_by_category.get(cat, 0) + 1
 
         flagged_fees = [r for r in fee_records if not r.within_tolerance]
-        fee_variance_total = Money.sum([r.delta for r in flagged_fees]) if flagged_fees else Money.zero()
+        fee_variance_total = (
+            Money.sum([r.delta for r in flagged_fees]) if flagged_fees else Money.zero()
+        )
 
         return {
             "auto_match_rate": round(auto_match_rate, 6),
@@ -474,11 +546,13 @@ class Orchestrator:
             "total_settlement_lines": len(settlement_lines),
             "baseline": {
                 "auto_match_rate": round(
-                    len(baseline_matched_ids) / len(settlement_lines) if settlement_lines else 0.0, 6
+                    len(baseline_matched_ids) / len(settlement_lines) if settlement_lines else 0.0,
+                    6,
                 ),
                 "value_explained_pct": round(
                     float(baseline_matched_value.amount / total_value.amount)
-                    if total_value.amount != 0 else 0.0,
+                    if total_value.amount != 0
+                    else 0.0,
                     6,
                 ),
                 "matched_settlement_lines": len(baseline_matched_ids),
@@ -491,7 +565,9 @@ class Orchestrator:
             },
             "throughput": {
                 "records_per_second": (
-                    round(len(orders) / deterministic_elapsed, 1) if deterministic_elapsed > 0 else 0.0
+                    round(len(orders) / deterministic_elapsed, 1)
+                    if deterministic_elapsed > 0
+                    else 0.0
                 ),
                 "elapsed_seconds": round(deterministic_elapsed, 4),
                 "run_elapsed_seconds": round(run_elapsed, 4),
@@ -507,7 +583,6 @@ class Orchestrator:
                 "bank_txns_matched": len(matched_bank_ids),
             },
         }
-
 
 
 def _cascade_result_from(groups, settlement_lines, bank_txns, t1, t2) -> CascadeResult:
@@ -537,13 +612,20 @@ def _llm_call_row(call_id: uuid.UUID, run_id: uuid.UUID, call_record) -> dict:
     from datetime import UTC, datetime
 
     return {
-        "id": call_id, "run_id": run_id, "purpose": call_record.purpose,
-        "model": call_record.model, "prompt_version": call_record.prompt_version,
+        "id": call_id,
+        "run_id": run_id,
+        "purpose": call_record.purpose,
+        "model": call_record.model,
+        "prompt_version": call_record.prompt_version,
         "prompt_sha256": call_record.prompt_sha256,
         "request_payload": call_record.request_payload,
         "response_payload": call_record.response_payload,
-        "input_tokens": call_record.input_tokens, "output_tokens": call_record.output_tokens,
-        "cost_micros": call_record.cost_micros, "latency_ms": call_record.latency_ms,
-        "was_cached": call_record.was_cached, "validation_attempts": call_record.validation_attempts,
-        "validation_failed": call_record.validation_failed, "created_at": datetime.now(UTC),
+        "input_tokens": call_record.input_tokens,
+        "output_tokens": call_record.output_tokens,
+        "cost_micros": call_record.cost_micros,
+        "latency_ms": call_record.latency_ms,
+        "was_cached": call_record.was_cached,
+        "validation_attempts": call_record.validation_attempts,
+        "validation_failed": call_record.validation_failed,
+        "created_at": datetime.now(UTC),
     }

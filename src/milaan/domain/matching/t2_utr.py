@@ -116,11 +116,15 @@ def match_t2(
 
         for line in lines:
             target.add_member(
-                MatchMemberResult(entity_type="settlement_line", entity_id=line.id, allocated_amount=line.net)
+                MatchMemberResult(
+                    entity_type="settlement_line", entity_id=line.id, allocated_amount=line.net
+                )
             )
             result.matched_settlement_line_ids.add(line.id)
         target.add_member(
-            MatchMemberResult(entity_type="bank_txn", entity_id=bank.id, allocated_amount=bank.credit)
+            MatchMemberResult(
+                entity_type="bank_txn", entity_id=bank.id, allocated_amount=bank.credit
+            )
         )
         target.upgrade("T2_UTR", RULE_ID)
         result.matched_bank_txn_ids.add(bank.id)

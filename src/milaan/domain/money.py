@@ -35,7 +35,7 @@ class Money:
             raise MoneyError("Money cannot be constructed from float; use Decimal, int, or str.")
         try:
             dec = Decimal(amount) if not isinstance(amount, Decimal) else amount
-        except Exception as exc:  # noqa: BLE001 - re-raise as domain error
+        except Exception as exc:
             raise MoneyError(f"Cannot parse {amount!r} as Money") from exc
         if not dec.is_finite():
             raise MoneyError(f"Money must be finite, got {dec}")

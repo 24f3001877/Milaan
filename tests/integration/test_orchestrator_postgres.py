@@ -61,14 +61,21 @@ def _make_sources(data_dir: Path):
         content = (data_dir / fname).read_bytes()
         rows = read_rows(fname, content)
         mapping = propose_mapping(source_type, list(rows[0].keys())).mapping
-        sources.append(SourceFileInput(source_type=source_type, filename=fname, content=content, mapping=mapping))
+        sources.append(
+            SourceFileInput(
+                source_type=source_type, filename=fname, content=content, mapping=mapping
+            )
+        )
     return sources
 
 
 @pytest.fixture
 def small_batch(tmp_path: Path) -> Path:
     batch = generate(
-        seed=99, record_count=150, period_start=date(2026, 1, 1), period_end=date(2026, 1, 31),
+        seed=99,
+        record_count=150,
+        period_start=date(2026, 1, 1),
+        period_end=date(2026, 1, 31),
         pathology_weights=DEFAULT_WEIGHTS,
     )
     out_dir = tmp_path / "synth"
@@ -76,10 +83,14 @@ def small_batch(tmp_path: Path) -> Path:
     return out_dir
 
 
-def test_orchestrator_completes_with_llm_disabled_gracefully_degraded(db_session, small_batch, tmp_path) -> None:
+def test_orchestrator_completes_with_llm_disabled_gracefully_degraded(
+    db_session, small_batch, tmp_path
+) -> None:
     run_id, version = _make_run(db_session, "disabled")
     llm_client = LLMClient(mode="disabled", cache_dir=tmp_path / "llm_cache")
-    orch = Orchestrator(db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version)
+    orch = Orchestrator(
+        db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version
+    )
 
     result = orch.run(_make_sources(small_batch))
 
@@ -105,8 +116,13 @@ def test_orchestrator_cooperative_cancel_stops_cleanly(db_session, small_batch, 
     run_id, version = _make_run(db_session, "disabled")
     llm_client = LLMClient(mode="disabled", cache_dir=tmp_path / "llm_cache")
     orch = Orchestrator(
-        db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31),
-        ruleset_version=version, cancel_check=lambda: True,
+        db_session,
+        run_id,
+        llm_client,
+        date(2026, 1, 1),
+        date(2026, 1, 31),
+        ruleset_version=version,
+        cancel_check=lambda: True,
     )
 
     result = orch.run(_make_sources(small_batch))
@@ -130,7 +146,9 @@ def test_orchestrator_writes_a_verifiable_audit_trail(db_session, small_batch, t
 
     run_id, version = _make_run(db_session, "disabled")
     llm_client = LLMClient(mode="disabled", cache_dir=tmp_path / "llm_cache")
-    orch = Orchestrator(db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version)
+    orch = Orchestrator(
+        db_session, run_id, llm_client, date(2026, 1, 1), date(2026, 1, 31), ruleset_version=version
+    )
     orch.run(_make_sources(small_batch))
 
     valid, broken_at = verify_chain(db_session, run_id=run_id)

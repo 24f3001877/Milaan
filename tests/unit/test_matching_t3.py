@@ -18,15 +18,26 @@ def uid() -> uuid.UUID:
 def make_line(settled_on: date, net: str, settlement_id: str | None = None) -> SettlementLineEntity:
     sid = settlement_id or f"S-{uid().hex[:8]}"
     return SettlementLineEntity(
-        id=uid(), settlement_id=sid, payment_id=None, order_ref=None, line_type="payment",
-        gross=Money(net), net=Money(net), utr=None, settled_on=settled_on,
+        id=uid(),
+        settlement_id=sid,
+        payment_id=None,
+        order_ref=None,
+        line_type="payment",
+        gross=Money(net),
+        net=Money(net),
+        utr=None,
+        settled_on=settled_on,
     )
 
 
 def make_bank(value_date: date, credit: str) -> BankTxnEntity:
     return BankTxnEntity(
-        id=uid(), value_date=value_date, narration="NEFT CR (no UTR recoverable)",
-        utr_extracted=None, credit=Money(credit), debit=Money("0.00"),
+        id=uid(),
+        value_date=value_date,
+        narration="NEFT CR (no UTR recoverable)",
+        utr_extracted=None,
+        credit=Money(credit),
+        debit=Money("0.00"),
     )
 
 
@@ -105,7 +116,9 @@ def test_t3_caps_candidate_count_before_searching() -> None:
     target_line = make_line(D, "10.00", settlement_id="S000")
     other_lines = [make_line(D, f"{11 + i}.00", settlement_id=f"S{i + 1:03d}") for i in range(49)]
     bank = make_bank(D, "10.00")
-    result = match_t3([target_line, *other_lines], [bank], [], max_candidates=3, max_combinations_examined=1000)
+    result = match_t3(
+        [target_line, *other_lines], [bank], [], max_candidates=3, max_combinations_examined=1000
+    )
     assert result.matched_settlement_line_ids == {target_line.id}
 
 
@@ -117,8 +130,15 @@ def test_t3_merges_into_existing_t1_group() -> None:
 
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("500.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref=None, line_type="payment",
-        gross=Money("500.00"), net=Money("500.00"), utr="MALFORMED!!", settled_on=D,
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref=None,
+        line_type="payment",
+        gross=Money("500.00"),
+        net=Money("500.00"),
+        utr="MALFORMED!!",
+        settled_on=D,
     )
     bank = make_bank(D, "500.00")
 
@@ -137,8 +157,15 @@ def test_cascade_full_pipeline_resolves_via_t3_when_t1_t2_cannot() -> None:
 
     order = OrderEntity(id=uid(), order_id="O1", payment_id="p1", gross=Money("777.00"))
     line = SettlementLineEntity(
-        id=uid(), settlement_id="S1", payment_id="p1", order_ref=None, line_type="payment",
-        gross=Money("777.00"), net=Money("777.00"), utr=None, settled_on=D,  # no UTR at all
+        id=uid(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref=None,
+        line_type="payment",
+        gross=Money("777.00"),
+        net=Money("777.00"),
+        utr=None,
+        settled_on=D,  # no UTR at all
     )
     bank = make_bank(D, "777.00")
 

@@ -22,10 +22,15 @@ _INSTRUMENTS = ["upi", "card_debit", "card_credit", "netbanking", "wallet", "emi
 def default_rate_card(effective_from: date) -> list[RateCardBand]:
     return [
         RateCardBand(
-            version=RATE_CARD_VERSION, instrument=inst,
-            min_amount=Money("0.00"), max_amount=Money("99999999.00"),
-            percent_bps=200, flat_fee=Money("0.00"), tax_percent_bps=1800,
-            effective_from=effective_from, effective_to=None,
+            version=RATE_CARD_VERSION,
+            instrument=inst,
+            min_amount=Money("0.00"),
+            max_amount=Money("99999999.00"),
+            percent_bps=200,
+            flat_fee=Money("0.00"),
+            tax_percent_bps=1800,
+            effective_from=effective_from,
+            effective_to=None,
         )
         for inst in _INSTRUMENTS
     ]

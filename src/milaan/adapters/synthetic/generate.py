@@ -60,8 +60,8 @@ def _cents_amount(rng: Random, lo: int = 500, hi: int = 999_999) -> Money:
 
 
 def _compute_fee_tax(gross: Money) -> tuple[Money, Money, Money]:
-    fee = Money((gross.amount * MDR_RATE))
-    tax = Money((fee.amount * TAX_RATE))
+    fee = Money(gross.amount * MDR_RATE)
+    tax = Money(fee.amount * TAX_RATE)
     net = gross - fee - tax
     return fee, tax, net
 
@@ -122,31 +122,39 @@ def generate(
             "created_at": _fmt_dt(created_at),
         }
 
-        def emit_clean_pair(settlement_gross: Money, s_payment_id: str = payment_id) -> None:
+        def emit_clean_pair(
+            settlement_gross: Money,
+            s_payment_id: str = payment_id,
+            s_settlement_id: str = settlement_id,
+            s_order_id: str = order_id,
+            s_instrument: str = instrument,
+            s_settled_on: date = settled_on,
+            s_pathology: str | None = pathology,
+        ) -> None:
             fee, tax, net = _compute_fee_tax(settlement_gross)
             batch.settlements.append(
                 {
-                    "settlement_id": settlement_id,
+                    "settlement_id": s_settlement_id,
                     "payment_id": s_payment_id,
-                    "order_ref": order_id,
+                    "order_ref": s_order_id,
                     "line_type": "payment",
                     "gross": str(settlement_gross.amount),
                     "fee": str(fee.amount),
                     "tax": str(tax.amount),
                     "net": str(net.amount),
-                    "instrument": instrument,
-                    "settled_on": _fmt_date(settled_on),
+                    "instrument": s_instrument,
+                    "settled_on": _fmt_date(s_settled_on),
                     "utr": "",  # filled in during bank-batch aggregation below
                 }
             )
             batch.ground_truth.append(
                 {
                     "entity_type_a": "order",
-                    "natural_key_a": order_id,
+                    "natural_key_a": s_order_id,
                     "entity_type_b": "settlement_line",
-                    "natural_key_b": settlement_id,
+                    "natural_key_b": s_settlement_id,
                     "expected_allocated_amount": None,
-                    "pathology": pathology,
+                    "pathology": s_pathology,
                 }
             )
 
@@ -297,7 +305,11 @@ def generate(
             # No bank row this period — the credit belongs to the next period's batch.
             _record_pathology(batch, "settlement_line", settlement_id, pathology)
 
-        elif pathology in ("netted_refund_unlinked", "chargeback_debit_unlinked", "unknown_adjustment"):
+        elif pathology in (
+            "netted_refund_unlinked",
+            "chargeback_debit_unlinked",
+            "unknown_adjustment",
+        ):
             line_type = {
                 "netted_refund_unlinked": "refund",
                 "chargeback_debit_unlinked": "chargeback",
@@ -326,9 +338,7 @@ def generate(
                     "utr": "",
                 }
             )
-            batch.bank_rows.append(
-                {"_pending_batch_date": settled_on, "_settlement_id": stray_id}
-            )
+            batch.bank_rows.append({"_pending_batch_date": settled_on, "_settlement_id": stray_id})
             _record_pathology(batch, "settlement_line", stray_id, pathology)
 
         elif pathology == "ambiguous_multi_candidate":
@@ -380,7 +390,9 @@ def generate(
     return batch
 
 
-def _record_pathology(batch: GeneratedBatch, entity_type: str, natural_key: str, pathology: str) -> None:
+def _record_pathology(
+    batch: GeneratedBatch, entity_type: str, natural_key: str, pathology: str
+) -> None:
     batch.pathology_manifest.append(
         {"entity_type": entity_type, "natural_key": natural_key, "pathology": pathology}
     )
@@ -561,9 +573,7 @@ def main() -> None:
         DEFAULT_WEIGHTS,
     )
 
-    weights = (
-        {k: 1.0 for k in COMPRESSED_CATEGORIES} if args.compressed else DEFAULT_WEIGHTS
-    )
+    weights = dict.fromkeys(COMPRESSED_CATEGORIES, 1.0) if args.compressed else DEFAULT_WEIGHTS
 
     batch = generate(
         seed=args.seed,

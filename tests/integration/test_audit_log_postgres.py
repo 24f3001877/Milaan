@@ -46,9 +46,33 @@ def _make_run(session: Session) -> uuid.UUID:
 def test_chain_verifies_clean_when_untampered(db_session) -> None:
     run_id = _make_run(db_session)
     eid1, eid2 = uuid.uuid4(), uuid.uuid4()
-    append_entry(db_session, "operator", "run_created", "recon_run", None, {"period": "2026-01"}, run_id=run_id)
-    append_entry(db_session, "analyst_1", "exception_approved", "exception_item", eid1, {"action": "propose_match"}, run_id=run_id)
-    append_entry(db_session, "analyst_1", "match_group_created", "match_group", eid2, {"tier": "T1_PAYMENT_ID"}, run_id=run_id)
+    append_entry(
+        db_session,
+        "operator",
+        "run_created",
+        "recon_run",
+        None,
+        {"period": "2026-01"},
+        run_id=run_id,
+    )
+    append_entry(
+        db_session,
+        "analyst_1",
+        "exception_approved",
+        "exception_item",
+        eid1,
+        {"action": "propose_match"},
+        run_id=run_id,
+    )
+    append_entry(
+        db_session,
+        "analyst_1",
+        "match_group_created",
+        "match_group",
+        eid2,
+        {"tier": "T1_PAYMENT_ID"},
+        run_id=run_id,
+    )
     db_session.commit()
 
     valid, broken_at = verify_chain(db_session, run_id=run_id)
@@ -58,14 +82,29 @@ def test_chain_verifies_clean_when_untampered(db_session) -> None:
 
 def test_tampering_with_a_historical_row_is_detected(db_session) -> None:
     run_id = _make_run(db_session)
-    append_entry(db_session, "operator", "run_created", "recon_run", None, {"period": "2026-01"}, run_id=run_id)
+    append_entry(
+        db_session,
+        "operator",
+        "run_created",
+        "recon_run",
+        None,
+        {"period": "2026-01"},
+        run_id=run_id,
+    )
     r2 = append_entry(
-        db_session, "analyst_1", "exception_approved", "exception_item", uuid.uuid4(),
-        {"action": "propose_match"}, run_id=run_id,
+        db_session,
+        "analyst_1",
+        "exception_approved",
+        "exception_item",
+        uuid.uuid4(),
+        {"action": "propose_match"},
+        run_id=run_id,
     )
     db_session.commit()
 
-    db_session.execute(text("UPDATE audit_log SET actor = 'hacker' WHERE id = :id"), {"id": r2["id"]})
+    db_session.execute(
+        text("UPDATE audit_log SET actor = 'hacker' WHERE id = :id"), {"id": r2["id"]}
+    )
     db_session.commit()
 
     valid, broken_at = verify_chain(db_session, run_id=run_id)
@@ -75,7 +114,15 @@ def test_tampering_with_a_historical_row_is_detected(db_session) -> None:
 
 def test_tampering_with_payload_is_detected(db_session) -> None:
     run_id = _make_run(db_session)
-    r1 = append_entry(db_session, "operator", "run_created", "recon_run", None, {"period": "2026-01"}, run_id=run_id)
+    r1 = append_entry(
+        db_session,
+        "operator",
+        "run_created",
+        "recon_run",
+        None,
+        {"period": "2026-01"},
+        run_id=run_id,
+    )
     db_session.commit()
 
     db_session.execute(
@@ -98,6 +145,8 @@ def test_runtime_app_role_cannot_update_or_delete_audit_log(db_session) -> None:
         r = append_entry(app_session, "operator", "test_action", "recon_run", None, {})
         app_session.commit()
         with pytest.raises(Exception, match="permission denied"):
-            app_session.execute(text("UPDATE audit_log SET actor = 'x' WHERE id = :id"), {"id": r["id"]})
+            app_session.execute(
+                text("UPDATE audit_log SET actor = 'x' WHERE id = :id"), {"id": r["id"]}
+            )
             app_session.commit()
         app_session.rollback()

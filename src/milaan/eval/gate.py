@@ -73,7 +73,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Milaan eval regression gate")
     parser.add_argument("metrics_path", type=Path)
     parser.add_argument(
-        "--mode", choices=["full", "deterministic_only"], default="full",
+        "--mode",
+        choices=["full", "deterministic_only"],
+        default="full",
         help="'full' reads config/eval_thresholds.json; 'deterministic_only' applies GATE 1",
     )
     parser.add_argument("--thresholds-path", type=Path, default=DEFAULT_THRESHOLDS_PATH)

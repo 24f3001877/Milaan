@@ -63,10 +63,16 @@ def append_entry(
             "CAST(:payload AS JSONB), :prev_hash, :hash)"
         ),
         {
-            "id": next_id, "ts": ts, "run_id": str(run_id) if run_id else None,
-            "actor": actor, "action": action, "entity_type": entity_type,
-            "entity_id": entity_id_str, "payload": json.dumps(payload, default=str),
-            "prev_hash": last_hash, "hash": entry_hash,
+            "id": next_id,
+            "ts": ts,
+            "run_id": str(run_id) if run_id else None,
+            "actor": actor,
+            "action": action,
+            "entity_type": entity_type,
+            "entity_id": entity_id_str,
+            "payload": json.dumps(payload, default=str),
+            "prev_hash": last_hash,
+            "hash": entry_hash,
         },
     )
     return {"id": next_id, "hash": entry_hash, "prev_hash": last_hash}
@@ -90,8 +96,14 @@ def verify_chain(session: Session, run_id: uuid.UUID | str | None = None) -> tup
     for row in rows:
         payload = row.payload if isinstance(row.payload, dict) else json.loads(row.payload)
         expected = compute_entry_hash(
-            row.id, row.ts, row.actor, row.action, row.entity_type,
-            str(row.entity_id) if row.entity_id is not None else None, payload, prev_hash,
+            row.id,
+            row.ts,
+            row.actor,
+            row.action,
+            row.entity_type,
+            str(row.entity_id) if row.entity_id is not None else None,
+            payload,
+            prev_hash,
         )
         if row.prev_hash != prev_hash or expected != row.hash:
             return False, row.id

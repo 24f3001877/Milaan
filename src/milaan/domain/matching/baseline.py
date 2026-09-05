@@ -55,7 +55,7 @@ def naive_match(
         if utr:
             bank_by_utr.setdefault(utr, []).append(b)
 
-    for line in sorted(settlement_lines, key=lambda l: l.settlement_id):
+    for line in sorted(settlement_lines, key=lambda settlement_line: settlement_line.settlement_id):
         if not line.utr:
             continue
         candidates = bank_by_utr.get(normalize_utr(line.utr), [])

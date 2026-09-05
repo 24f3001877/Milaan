@@ -35,7 +35,9 @@ def run_eval(data_dir: Path, period_start: date, period_end: date) -> dict:
     cascade = run_t1_t2_t3(orders, lines, banks)
     bands = default_rate_card(period_start)
     fee_records = verify_fees(lines, bands, RATE_CARD_VERSION)
-    exceptions = classify_exceptions(orders, lines, banks, cascade, fee_records, period_start, period_end)
+    exceptions = classify_exceptions(
+        orders, lines, banks, cascade, fee_records, period_start, period_end
+    )
 
     baseline_groups = naive_match(orders, lines, banks)
 
@@ -45,44 +47,76 @@ def run_eval(data_dir: Path, period_start: date, period_end: date) -> dict:
     true_links = load_ground_truth_links(data_dir / "ground_truth.jsonl", orders, lines, banks)
 
     order_payment_id = {o.id: o.payment_id for o in orders}
-    settlement_payment_id = {l.id: l.payment_id for l in lines}
+    settlement_payment_id = {
+        settlement_line.id: settlement_line.payment_id for settlement_line in lines
+    }
 
-    total_settlement_value = Money.sum([l.gross for l in lines]) if lines else Money.zero()
+    total_settlement_value = (
+        Money.sum([settlement_line.gross for settlement_line in lines]) if lines else Money.zero()
+    )
     matched_ids = {
         m.entity_id for g in cascade.groups for m in g.members if m.entity_type == "settlement_line"
     }
     matched_settlement_value = (
-        Money.sum([l.gross for l in lines if l.id in matched_ids]) if matched_ids else Money.zero()
+        Money.sum(
+            [
+                settlement_line.gross
+                for settlement_line in lines
+                if settlement_line.id in matched_ids
+            ]
+        )
+        if matched_ids
+        else Money.zero()
     )
 
     milaan_score = score(
-        predicted_groups=cascade.groups, true_links=true_links,
-        total_settlement_lines=len(lines), total_settlement_value=total_settlement_value,
+        predicted_groups=cascade.groups,
+        true_links=true_links,
+        total_settlement_lines=len(lines),
+        total_settlement_value=total_settlement_value,
         matched_settlement_value=matched_settlement_value,
-        exception_count=len(exceptions), total_records=len(orders),
-        order_payment_id=order_payment_id, settlement_payment_id=settlement_payment_id,
+        exception_count=len(exceptions),
+        total_records=len(orders),
+        order_payment_id=order_payment_id,
+        settlement_payment_id=settlement_payment_id,
     )
 
     baseline_matched_ids = {
-        m.entity_id for g in baseline_groups for m in g.members if m.entity_type == "settlement_line"
+        m.entity_id
+        for g in baseline_groups
+        for m in g.members
+        if m.entity_type == "settlement_line"
     }
     baseline_matched_value = (
-        Money.sum([l.gross for l in lines if l.id in baseline_matched_ids])
-        if baseline_matched_ids else Money.zero()
+        Money.sum(
+            [
+                settlement_line.gross
+                for settlement_line in lines
+                if settlement_line.id in baseline_matched_ids
+            ]
+        )
+        if baseline_matched_ids
+        else Money.zero()
     )
     baseline_score = score(
-        predicted_groups=baseline_groups, true_links=true_links,
-        total_settlement_lines=len(lines), total_settlement_value=total_settlement_value,
+        predicted_groups=baseline_groups,
+        true_links=true_links,
+        total_settlement_lines=len(lines),
+        total_settlement_value=total_settlement_value,
         matched_settlement_value=baseline_matched_value,
-        exception_count=0, total_records=len(orders),
-        order_payment_id=order_payment_id, settlement_payment_id=settlement_payment_id,
+        exception_count=0,
+        total_records=len(orders),
+        order_payment_id=order_payment_id,
+        settlement_payment_id=settlement_payment_id,
     )
 
     pathology_table = _build_pathology_table(data_dir, orders, lines, banks, exceptions)
 
     flagged_fee_variances = [r for r in fee_records if not r.within_tolerance]
     fee_variance_total = (
-        Money.sum([r.delta for r in flagged_fee_variances]) if flagged_fee_variances else Money.zero()
+        Money.sum([r.delta for r in flagged_fee_variances])
+        if flagged_fee_variances
+        else Money.zero()
     )
 
     exceptions_by_category: dict[str, int] = {}
@@ -118,7 +152,7 @@ def run_eval(data_dir: Path, period_start: date, period_end: date) -> dict:
     return metrics
 
 
-def _score_to_dict(s) -> dict:  # noqa: ANN001
+def _score_to_dict(s) -> dict:
     return {
         "auto_match_rate": round(s.auto_match_rate, 6),
         "value_explained_pct": round(s.value_explained_pct, 6),
@@ -133,7 +167,7 @@ def _score_to_dict(s) -> dict:  # noqa: ANN001
     }
 
 
-def _build_pathology_table(data_dir: Path, orders, lines, banks, exceptions) -> list[dict]:  # noqa: ANN001
+def _build_pathology_table(data_dir: Path, orders, lines, banks, exceptions) -> list[dict]:
     manifest_path = data_dir / "pathology_manifest.jsonl"
     if not manifest_path.exists():
         return []
@@ -143,7 +177,7 @@ def _build_pathology_table(data_dir: Path, orders, lines, banks, exceptions) -> 
     settlement_id_by_eid = {s.id: s.settlement_id for s in lines}
     narration_by_eid = {b.id: b.narration for b in banks}
 
-    def natural_key(entity_type: str, entity_id) -> str | None:  # noqa: ANN001
+    def natural_key(entity_type: str, entity_id) -> str | None:
         if entity_type == "order":
             return order_id_by_eid.get(entity_id)
         if entity_type == "settlement_line":
@@ -169,7 +203,12 @@ def _build_pathology_table(data_dir: Path, orders, lines, banks, exceptions) -> 
         injected = injected_by_category[cat]
         detected = detected_by_category.get(cat, 0)
         table.append(
-            {"pathology": cat, "injected": injected, "detected": detected, "missed": injected - detected}
+            {
+                "pathology": cat,
+                "injected": injected,
+                "detected": detected,
+                "missed": injected - detected,
+            }
         )
     return table
 
@@ -220,7 +259,9 @@ def render_metrics_md(metrics: dict) -> str:
         "|---|---|---|---|",
     ]
     for row in metrics["pathology_table"]:
-        out.append(f"| {row['pathology']} | {row['injected']} | {row['detected']} | {row['missed']} |")
+        out.append(
+            f"| {row['pathology']} | {row['injected']} | {row['detected']} | {row['missed']} |"
+        )
 
     out += [
         "",

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from decimal import Decimal
 
 from milaan.domain.entities import RateCardBand, SettlementLineEntity
 from milaan.domain.fee_verification import (
@@ -19,27 +18,47 @@ D = date(2026, 1, 10)
 # Mirrors the synthetic generator's own formula exactly (2% MDR, 18% tax on the fee) so
 # these tests validate real-world-shaped numbers, not made-up ones.
 STANDARD_BAND = RateCardBand(
-    version="v1", instrument="upi", min_amount=Money("0.00"), max_amount=Money("9999999.00"),
-    percent_bps=200, flat_fee=Money("0.00"), tax_percent_bps=1800,
-    effective_from=date(2026, 1, 1), effective_to=None,
+    version="v1",
+    instrument="upi",
+    min_amount=Money("0.00"),
+    max_amount=Money("9999999.00"),
+    percent_bps=200,
+    flat_fee=Money("0.00"),
+    tax_percent_bps=1800,
+    effective_from=date(2026, 1, 1),
+    effective_to=None,
 )
 
 
 def make_line(
-    gross: str, fee: str, tax: str, net: str, instrument: str | None = "upi",
-    line_type: str = "payment", settled_on: date = D,
+    gross: str,
+    fee: str,
+    tax: str,
+    net: str,
+    instrument: str | None = "upi",
+    line_type: str = "payment",
+    settled_on: date = D,
 ) -> SettlementLineEntity:
     return SettlementLineEntity(
-        id=uuid.uuid4(), settlement_id="S1", payment_id="p1", order_ref="O1",
-        line_type=line_type, gross=Money(gross), net=Money(net), utr="UTR1",
-        settled_on=settled_on, fee=Money(fee), tax=Money(tax), instrument=instrument,
+        id=uuid.uuid4(),
+        settlement_id="S1",
+        payment_id="p1",
+        order_ref="O1",
+        line_type=line_type,
+        gross=Money(gross),
+        net=Money(net),
+        utr="UTR1",
+        settled_on=settled_on,
+        fee=Money(fee),
+        tax=Money(tax),
+        instrument=instrument,
     )
 
 
 def test_compute_expected_fee_tax_matches_generator_formula() -> None:
     fee, tax = compute_expected_fee_tax(STANDARD_BAND, Money("1000.00"))
-    assert fee == Money("20.00")   # 2% of 1000
-    assert tax == Money("3.60")    # 18% of 20.00
+    assert fee == Money("20.00")  # 2% of 1000
+    assert tax == Money("3.60")  # 18% of 20.00
 
 
 def test_find_applicable_band_respects_instrument_amount_and_date() -> None:
@@ -106,10 +125,16 @@ def test_verify_fees_all_amounts_are_money_not_float() -> None:
 
 def test_flat_fee_component_applies() -> None:
     band = RateCardBand(
-        version="v1", instrument="netbanking", min_amount=Money("0.00"), max_amount=Money("999999.00"),
-        percent_bps=100, flat_fee=Money("5.00"), tax_percent_bps=1800,
-        effective_from=date(2026, 1, 1), effective_to=None,
+        version="v1",
+        instrument="netbanking",
+        min_amount=Money("0.00"),
+        max_amount=Money("999999.00"),
+        percent_bps=100,
+        flat_fee=Money("5.00"),
+        tax_percent_bps=1800,
+        effective_from=date(2026, 1, 1),
+        effective_to=None,
     )
     fee, tax = compute_expected_fee_tax(band, Money("1000.00"))
     assert fee == Money("15.00")  # 1% of 1000 + flat 5.00
-    assert tax == Money("2.70")   # 18% of 15.00
+    assert tax == Money("2.70")  # 18% of 15.00

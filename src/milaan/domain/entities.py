@@ -54,6 +54,7 @@ class BankTxnEntity:
 class RateCardBand:
     """One row of a versioned rate card (Schema §5.4 `rate_card`). Basis points as
     integers so tier boundaries are exact — never a float percentage."""
+
     version: str
     instrument: str
     min_amount: Money

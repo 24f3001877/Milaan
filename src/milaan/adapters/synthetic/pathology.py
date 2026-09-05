@@ -16,7 +16,9 @@ PATHOLOGY_CATALOGUE: dict[str, str] = {
     "missing_in_gateway": "An order was paid but the gateway settlement report never lists it.",
     "orphan_bank_credit": "A bank credit arrives with no settlement line explaining it.",
     "amount_mismatch": "Settlement gross differs from the order's recorded gross.",
-    "fee_variance": "Reported fee/tax deviates from the rate-card-expected figure beyond tolerance.",
+    "fee_variance": (
+        "Reported fee/tax deviates from the rate-card-expected figure beyond tolerance."
+    ),
     "duplicate_utr": "A settlement line's UTR collides with an unrelated batch's UTR.",
     "partial_settlement": "One order's payment is split across two settlement lines.",
     "period_boundary_timing": "Settlement falls in-period but its bank credit lands next period.",

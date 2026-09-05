@@ -22,14 +22,26 @@ from pydantic import BaseModel, Field, field_validator
 # Mirrors Schema §5.3's exception_category and proposed_action enums exactly — the LLM's
 # vocabulary is a closed set, not free text.
 EXCEPTION_CATEGORIES = (
-    "missing_in_bank", "missing_in_gateway", "orphan_bank_credit", "amount_mismatch",
-    "fee_variance", "duplicate_utr", "partial_settlement", "period_boundary_timing",
-    "netted_refund_unlinked", "chargeback_debit_unlinked", "unknown_adjustment",
+    "missing_in_bank",
+    "missing_in_gateway",
+    "orphan_bank_credit",
+    "amount_mismatch",
+    "fee_variance",
+    "duplicate_utr",
+    "partial_settlement",
+    "period_boundary_timing",
+    "netted_refund_unlinked",
+    "chargeback_debit_unlinked",
+    "unknown_adjustment",
     "ambiguous_multi_candidate",
 )
 PROPOSED_ACTIONS = (
-    "propose_match", "propose_split_allocation", "flag_fee_variance",
-    "flag_missing_in_bank", "request_more_data", "escalate_to_human",
+    "propose_match",
+    "propose_split_allocation",
+    "flag_fee_variance",
+    "flag_missing_in_bank",
+    "request_more_data",
+    "escalate_to_human",
 )
 
 

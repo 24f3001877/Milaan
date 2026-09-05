@@ -64,7 +64,7 @@ class ReconRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by: Mapped[str] = mapped_column(String, nullable=False, default="operator")
 
-    source_files: Mapped[list["DataSourceFile"]] = relationship(back_populates="run")
+    source_files: Mapped[list[DataSourceFile]] = relationship(back_populates="run")
 
 
 class SchemaMapping(Base):
@@ -93,7 +93,9 @@ class DataSourceFile(Base):
     """Exactly one file per source per run (Schema §5.4)."""
 
     __tablename__ = "data_source_file"
-    __table_args__ = (UniqueConstraint("run_id", "source_type", name="uq_data_source_file_run_source"),)
+    __table_args__ = (
+        UniqueConstraint("run_id", "source_type", name="uq_data_source_file_run_source"),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(

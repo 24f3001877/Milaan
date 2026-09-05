@@ -101,18 +101,31 @@ class LLMClient:
                 )
             parsed = response_schema.model_validate(cached["response"])
             record = LLMCallRecord(
-                purpose=purpose, model=self.model, prompt_version=self.prompt_version,
-                prompt_sha256=key, request_payload=request_payload, response_payload=cached["response"],
-                input_tokens=cached.get("input_tokens"), output_tokens=cached.get("output_tokens"),
-                cost_micros=0, latency_ms=0, was_cached=True,
-                validation_attempts=1, validation_failed=False,
+                purpose=purpose,
+                model=self.model,
+                prompt_version=self.prompt_version,
+                prompt_sha256=key,
+                request_payload=request_payload,
+                response_payload=cached["response"],
+                input_tokens=cached.get("input_tokens"),
+                output_tokens=cached.get("output_tokens"),
+                cost_micros=0,
+                latency_ms=0,
+                was_cached=True,
+                validation_attempts=1,
+                validation_failed=False,
             )
             return parsed, record
 
         return self._complete_live(purpose, prompt, response_schema, key, request_payload)
 
     def _complete_live(
-        self, purpose: str, prompt: str, response_schema: type[T], cache_key: str, request_payload: dict
+        self,
+        purpose: str,
+        prompt: str,
+        response_schema: type[T],
+        cache_key: str,
+        request_payload: dict,
     ) -> tuple[T, LLMCallRecord]:
         if not self.api_key:
             raise LLMDisabledError("LLM_MODE=live requires LLM_API_KEY")
@@ -155,11 +168,19 @@ class LLMClient:
                 },
             )
             record = LLMCallRecord(
-                purpose=purpose, model=self.model, prompt_version=self.prompt_version,
-                prompt_sha256=cache_key, request_payload=request_payload, response_payload=parsed_json,
-                input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
-                cost_micros=_estimate_cost_micros(usage), latency_ms=latency_ms, was_cached=False,
-                validation_attempts=attempts, validation_failed=False,
+                purpose=purpose,
+                model=self.model,
+                prompt_version=self.prompt_version,
+                prompt_sha256=cache_key,
+                request_payload=request_payload,
+                response_payload=parsed_json,
+                input_tokens=usage.get("input_tokens"),
+                output_tokens=usage.get("output_tokens"),
+                cost_micros=_estimate_cost_micros(usage),
+                latency_ms=latency_ms,
+                was_cached=False,
+                validation_attempts=attempts,
+                validation_failed=False,
             )
             return parsed, record
 
@@ -187,7 +208,9 @@ class LLMClient:
             resp.raise_for_status()
             data = resp.json()
         text = "".join(
-            block.get("text", "") for block in data.get("content", []) if block.get("type") == "text"
+            block.get("text", "")
+            for block in data.get("content", [])
+            if block.get("type") == "text"
         )
         usage = data.get("usage", {})
         return text, usage

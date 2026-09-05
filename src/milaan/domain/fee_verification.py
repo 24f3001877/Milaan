@@ -45,7 +45,8 @@ def find_applicable_band(
     if instrument is None:
         return None
     candidates = [
-        b for b in bands
+        b
+        for b in bands
         if b.instrument == instrument
         and b.min_amount.amount <= gross.amount <= b.max_amount.amount
         and b.effective_from <= on_date
@@ -76,7 +77,9 @@ def verify_fees(
     """Batch entry point — verifies every payment-type line using its own gross/fee/tax/
     instrument fields directly."""
     records: list[FeeVarianceRecord] = []
-    for line in sorted(lines, key=lambda l: l.settlement_id):  # deterministic order (C2)
+    for line in sorted(
+        lines, key=lambda settlement_line: settlement_line.settlement_id
+    ):  # deterministic order (C2)
         if line.line_type != "payment":
             continue
 

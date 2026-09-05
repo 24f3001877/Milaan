@@ -6,8 +6,6 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-import pytest
-
 from milaan.domain.entities import BankTxnEntity, OrderEntity, SettlementLineEntity
 from milaan.domain.matching.cascade import run_t1_t2
 from milaan.domain.matching.t1_payment_id import match_t1
@@ -21,28 +19,46 @@ def uid() -> uuid.UUID:
 
 
 def make_order(payment_id: str, gross: str) -> OrderEntity:
-    return OrderEntity(id=uid(), order_id=f"ORD-{payment_id}", payment_id=payment_id, gross=Money(gross))
+    return OrderEntity(
+        id=uid(), order_id=f"ORD-{payment_id}", payment_id=payment_id, gross=Money(gross)
+    )
 
 
 def make_settlement(
-    settlement_id: str, payment_id: str | None, gross: str, net: str, utr: str | None,
+    settlement_id: str,
+    payment_id: str | None,
+    gross: str,
+    net: str,
+    utr: str | None,
     line_type: str = "payment",
 ) -> SettlementLineEntity:
     g = Money(gross)
     return SettlementLineEntity(
-        id=uid(), settlement_id=settlement_id, payment_id=payment_id, order_ref=None,
-        line_type=line_type, gross=g, net=Money(net), utr=utr, settled_on=date(2026, 1, 6),
+        id=uid(),
+        settlement_id=settlement_id,
+        payment_id=payment_id,
+        order_ref=None,
+        line_type=line_type,
+        gross=g,
+        net=Money(net),
+        utr=utr,
+        settled_on=date(2026, 1, 6),
     )
 
 
 def make_bank(credit: str, utr: str) -> BankTxnEntity:
     return BankTxnEntity(
-        id=uid(), value_date=date(2026, 1, 6), narration=f"NEFT CR UTR{utr} SETTLEMENT",
-        utr_extracted=utr, credit=Money(credit), debit=Money("0.00"),
+        id=uid(),
+        value_date=date(2026, 1, 6),
+        narration=f"NEFT CR UTR{utr} SETTLEMENT",
+        utr_extracted=utr,
+        credit=Money(credit),
+        debit=Money("0.00"),
     )
 
 
 # --- T1 -----------------------------------------------------------------------------
+
 
 def test_t1_matches_single_settlement_to_order() -> None:
     order = make_order("pay1", "100.00")
@@ -94,6 +110,7 @@ def test_t1_leaves_missing_payment_id_unmatched() -> None:
 
 # --- UTR extraction -------------------------------------------------------------------
 
+
 def test_extract_utr_prefers_structured_field() -> None:
     assert extract_utr("some narration", "UTR123456") == "UTR123456"
 
@@ -111,6 +128,7 @@ def test_normalize_utr_is_case_and_whitespace_insensitive() -> None:
 
 
 # --- T2 -----------------------------------------------------------------------------
+
 
 def test_t2_merges_into_existing_t1_group() -> None:
     order = make_order("pay1", "100.00")
@@ -223,6 +241,7 @@ def test_t2_upgrades_settlement_allocated_amount_from_gross_to_net() -> None:
 
 
 # --- Money exactness in the cascade ----------------------------------------------------
+
 
 def test_allocated_amounts_are_money_not_float() -> None:
     order = make_order("p1", "10.00")

@@ -72,7 +72,7 @@ def test_float_construction_is_rejected() -> None:
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
-        ("1.005", "1.01"),    # round-half-up (away from zero), not banker's rounding
+        ("1.005", "1.01"),  # round-half-up (away from zero), not banker's rounding
         ("1.004", "1.00"),
         ("-1.005", "-1.01"),  # ROUND_HALF_UP ties go away from zero, symmetric in sign
         ("0.005", "0.01"),

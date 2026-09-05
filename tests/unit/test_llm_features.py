@@ -40,15 +40,27 @@ def test_propose_mapping_with_llm_returns_validated_proposal(tmp_path: Path) -> 
         ", ".join(f"{h}={row.get(h, '')!r}" for h in unmapped) for row in sample_rows
     )
     prompt = template.format(
-        source_type="orders", canonical_fields=", ".join(FIELDS_BY_SOURCE["orders"]),
-        required_fields=", ".join(REQUIRED_BY_SOURCE["orders"]), headers=", ".join(unmapped),
+        source_type="orders",
+        canonical_fields=", ".join(FIELDS_BY_SOURCE["orders"]),
+        required_fields=", ".join(REQUIRED_BY_SOURCE["orders"]),
+        headers=", ".join(unmapped),
         sample_rows=sample_lines,
     )
-    _cache(tmp_path, prompt, {
-        "mappings": [{"source_column": "Merchant Txn Ref", "canonical_field": "payment_id", "confidence": 0.88}],
-        "unmapped_columns": [],
-        "reasoning": "Resembles a transaction identifier.",
-    })
+    _cache(
+        tmp_path,
+        prompt,
+        {
+            "mappings": [
+                {
+                    "source_column": "Merchant Txn Ref",
+                    "canonical_field": "payment_id",
+                    "confidence": 0.88,
+                }
+            ],
+            "unmapped_columns": [],
+            "reasoning": "Resembles a transaction identifier.",
+        },
+    )
     client = LLMClient(mode="cached", cache_dir=tmp_path)
     proposal, record = propose_mapping_with_llm("orders", unmapped, sample_rows, client)
     assert proposal.mappings[0].canonical_field == "payment_id"
@@ -57,17 +69,24 @@ def test_propose_mapping_with_llm_returns_validated_proposal(tmp_path: Path) -> 
 
 def _make_exception() -> ExceptionRecord:
     return ExceptionRecord(
-        category="missing_in_bank", severity="medium", entity_type="settlement_line",
-        entity_id=uuid.uuid4(), amount_at_risk=Money("500.00"),
-        deterministic_trace={"reason": "valid payment_id, but no bank credit ever covers this settlement"},
+        category="missing_in_bank",
+        severity="medium",
+        entity_type="settlement_line",
+        entity_id=uuid.uuid4(),
+        amount_at_risk=Money("500.00"),
+        deterministic_trace={
+            "reason": "valid payment_id, but no bank credit ever covers this settlement"
+        },
     )
 
 
 def _triage_prompt(exc: ExceptionRecord, record_fields: dict) -> str:
     template = load_prompt_template("triage_v1")
     return template.format(
-        category=exc.category, proposed_actions=", ".join(PROPOSED_ACTIONS),
-        entity_type=exc.entity_type, amount_at_risk=exc.amount_at_risk.to_json(),
+        category=exc.category,
+        proposed_actions=", ".join(PROPOSED_ACTIONS),
+        entity_type=exc.entity_type,
+        amount_at_risk=exc.amount_at_risk.to_json(),
         deterministic_trace=json.dumps(exc.deterministic_trace, sort_keys=True),
         record_fields=json.dumps(record_fields, sort_keys=True, default=str),
     )
@@ -77,13 +96,17 @@ def test_triage_exception_returns_validated_proposal(tmp_path: Path) -> None:
     exc = _make_exception()
     record_fields = {"settlement_id": "STL001", "payment_id": "pay001"}
     prompt = _triage_prompt(exc, record_fields)
-    _cache(tmp_path, prompt, {
-        "hypothesis": "No bank credit arrived for this settlement this period.",
-        "proposed_action": "flag_missing_in_bank",
-        "confidence": 0.8,
-        "rationale": "STL001 has payment_id pay001 but no bank_txn group.",
-        "referenced_record_ids": ["STL001"],
-    })
+    _cache(
+        tmp_path,
+        prompt,
+        {
+            "hypothesis": "No bank credit arrived for this settlement this period.",
+            "proposed_action": "flag_missing_in_bank",
+            "confidence": 0.8,
+            "rationale": "STL001 has payment_id pay001 but no bank_txn group.",
+            "referenced_record_ids": ["STL001"],
+        },
+    )
     client = LLMClient(mode="cached", cache_dir=tmp_path)
     proposal, record = triage_exception(exc, record_fields, {"STL001", "pay001"}, client)
     assert proposal.proposed_action == "flag_missing_in_bank"
@@ -94,10 +117,17 @@ def test_triage_exception_rejects_hallucinated_record_id(tmp_path: Path) -> None
     exc = _make_exception()
     record_fields = {"settlement_id": "STL001"}
     prompt = _triage_prompt(exc, record_fields)
-    _cache(tmp_path, prompt, {
-        "hypothesis": "test", "proposed_action": "escalate_to_human", "confidence": 0.5,
-        "rationale": "test", "referenced_record_ids": ["DOES-NOT-EXIST"],
-    })
+    _cache(
+        tmp_path,
+        prompt,
+        {
+            "hypothesis": "test",
+            "proposed_action": "escalate_to_human",
+            "confidence": 0.5,
+            "rationale": "test",
+            "referenced_record_ids": ["DOES-NOT-EXIST"],
+        },
+    )
     client = LLMClient(mode="cached", cache_dir=tmp_path)
     with pytest.raises(LLMValidationError, match="unknown record ids"):
         triage_exception(exc, record_fields, {"STL001"}, client)
@@ -113,18 +143,27 @@ def test_triage_exception_never_carries_an_amount_field() -> None:
 def test_explain_exception_returns_prose(tmp_path: Path) -> None:
     exc = _make_exception()
     triage = TriageProposal(
-        hypothesis="No bank credit arrived.", proposed_action="flag_missing_in_bank",
-        confidence=0.8, rationale="see trace", referenced_record_ids=[],
+        hypothesis="No bank credit arrived.",
+        proposed_action="flag_missing_in_bank",
+        confidence=0.8,
+        rationale="see trace",
+        referenced_record_ids=[],
     )
     template = load_prompt_template("explain_v1")
     prompt = template.format(
-        category=exc.category, hypothesis=triage.hypothesis,
-        proposed_action=triage.proposed_action, amount_at_risk=exc.amount_at_risk.to_json(),
+        category=exc.category,
+        hypothesis=triage.hypothesis,
+        proposed_action=triage.proposed_action,
+        amount_at_risk=exc.amount_at_risk.to_json(),
     )
-    _cache(tmp_path, prompt, {
-        "explanation": "This payment settled but the money never showed up in the bank "
-        "statement this period, so it needs a human decision."
-    })
+    _cache(
+        tmp_path,
+        prompt,
+        {
+            "explanation": "This payment settled but the money never showed up in the bank "
+            "statement this period, so it needs a human decision."
+        },
+    )
     client = LLMClient(mode="cached", cache_dir=tmp_path)
     response, record = explain_exception(exc, triage, client)
     assert "bank statement" in response.explanation

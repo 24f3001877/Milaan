@@ -35,7 +35,10 @@ class OrderRecord(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     source_file_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("data_source_file.id"), nullable=False
@@ -65,7 +68,10 @@ class SettlementLine(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     source_file_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("data_source_file.id"), nullable=False
@@ -94,7 +100,10 @@ class BankTxn(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     run_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("recon_run.id", ondelete="CASCADE"), nullable=False, index=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("recon_run.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     source_file_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("data_source_file.id"), nullable=False

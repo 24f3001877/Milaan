@@ -24,8 +24,14 @@ def compute_entry_hash(
     canonical_payload = json.dumps(payload, sort_keys=True, default=str)
     joined = "|".join(
         [
-            str(entry_id), ts.isoformat(), actor, action, entity_type,
-            entity_id or "", canonical_payload, prev_hash or "",
+            str(entry_id),
+            ts.isoformat(),
+            actor,
+            action,
+            entity_type,
+            entity_id or "",
+            canonical_payload,
+            prev_hash or "",
         ]
     )
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()

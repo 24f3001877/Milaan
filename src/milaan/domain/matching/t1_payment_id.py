@@ -31,9 +31,7 @@ class T1Result:
     ambiguous_payment_ids: set[str] = field(default_factory=set)
 
 
-def match_t1(
-    orders: list[OrderEntity], settlement_lines: list[SettlementLineEntity]
-) -> T1Result:
+def match_t1(orders: list[OrderEntity], settlement_lines: list[SettlementLineEntity]) -> T1Result:
     result = T1Result()
 
     # Index orders by payment_id; a payment_id claimed by >1 order is a data problem —
@@ -64,11 +62,13 @@ def match_t1(
             continue
 
         order = candidate_orders[0]
-        group = MatchGroupResult(tier="T1_PAYMENT_ID", confidence=Decimal("1.0000"), rule_id=RULE_ID)
+        group = MatchGroupResult(
+            tier="T1_PAYMENT_ID", confidence=Decimal("1.0000"), rule_id=RULE_ID
+        )
         group.add_member(
             MatchMemberResult(entity_type="order", entity_id=order.id, allocated_amount=order.gross)
         )
-        for line in sorted(lines, key=lambda l: l.settlement_id):
+        for line in sorted(lines, key=lambda settlement_line: settlement_line.settlement_id):
             group.add_member(
                 MatchMemberResult(
                     entity_type="settlement_line", entity_id=line.id, allocated_amount=line.gross

@@ -51,8 +51,11 @@ _PLACEHOLDER_ACTION_BY_CATEGORY = {
 
 def _golden_item_to_exception(item: GoldenItem) -> ExceptionRecord:
     return ExceptionRecord(
-        category=item.category, severity="medium", entity_type=item.entity_type,
-        entity_id=__import__("uuid").uuid4(), amount_at_risk=item.amount_at_risk,
+        category=item.category,
+        severity="medium",
+        entity_type=item.entity_type,
+        entity_id=__import__("uuid").uuid4(),
+        amount_at_risk=item.amount_at_risk,
         deterministic_trace=item.deterministic_trace,
     )
 
@@ -60,14 +63,18 @@ def _golden_item_to_exception(item: GoldenItem) -> ExceptionRecord:
 def _build_prompt(item: GoldenItem, exc: ExceptionRecord) -> str:
     template = load_prompt_template("triage_v1")
     return template.format(
-        category=exc.category, proposed_actions=", ".join(PROPOSED_ACTIONS),
-        entity_type=exc.entity_type, amount_at_risk=exc.amount_at_risk.to_json(),
+        category=exc.category,
+        proposed_actions=", ".join(PROPOSED_ACTIONS),
+        entity_type=exc.entity_type,
+        amount_at_risk=exc.amount_at_risk.to_json(),
         deterministic_trace=json.dumps(exc.deterministic_trace, sort_keys=True),
         record_fields=json.dumps(item.record_fields, sort_keys=True, default=str),
     )
 
 
-def populate_placeholder_cache(cache_dir: Path, model: str = DEFAULT_MODEL, prompt_version: str = "v1") -> None:
+def populate_placeholder_cache(
+    cache_dir: Path, model: str = DEFAULT_MODEL, prompt_version: str = "v1"
+) -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     for item in GOLDEN_SET:
         exc = _golden_item_to_exception(item)
@@ -79,7 +86,9 @@ def populate_placeholder_cache(cache_dir: Path, model: str = DEFAULT_MODEL, prom
             f"({item.entity_type}, amount at risk {item.amount_at_risk.to_json()}).",
             "proposed_action": action,
             "confidence": 0.7,
-            "rationale": f"Rule-based placeholder: category {item.category} typically warrants {action}.",
+            "rationale": (
+                f"Rule-based placeholder: category {item.category} typically warrants {action}."
+            ),
             "referenced_record_ids": sorted(item.valid_record_ids),
         }
         (cache_dir / f"{key}.json").write_text(
@@ -117,19 +126,24 @@ def run_triage_eval(cache_dir: Path) -> TriageEvalResult:
         if not is_correct:
             mismatches.append(
                 {
-                    "item_id": item.item_id, "category": item.category,
-                    "expected": item.expected_action, "predicted": proposal.proposed_action,
+                    "item_id": item.item_id,
+                    "category": item.category,
+                    "expected": item.expected_action,
+                    "predicted": proposal.proposed_action,
                 }
             )
 
     per_category_accuracy = {
-        cat: round(stats["correct"] / stats["total"], 3) for cat, stats in sorted(by_category.items())
+        cat: round(stats["correct"] / stats["total"], 3)
+        for cat, stats in sorted(by_category.items())
     }
 
     return TriageEvalResult(
-        total=total, correct=correct,
+        total=total,
+        correct=correct,
         accuracy=round(correct / total, 3) if total else 0.0,
-        per_category_accuracy=per_category_accuracy, mismatches=mismatches,
+        per_category_accuracy=per_category_accuracy,
+        mismatches=mismatches,
     )
 
 
@@ -138,8 +152,11 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Golden-set triage accuracy report")
     parser.add_argument("--cache-dir", type=Path, default=Path("data/llm_cache"))
-    parser.add_argument("--populate-placeholder", action="store_true",
-                         help="fill the cache with the deterministic placeholder responder")
+    parser.add_argument(
+        "--populate-placeholder",
+        action="store_true",
+        help="fill the cache with the deterministic placeholder responder",
+    )
     args = parser.parse_args()
 
     if args.populate_placeholder:

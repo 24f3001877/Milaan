@@ -54,6 +54,11 @@ ignore = []
 [tool.ruff.lint.isort]
 known-first-party = ["milaan"]
 
+[tool.ruff.lint.per-file-ignores]
+"src/milaan/app/**/*.py" = ["B008"]
+"src/milaan/adapters/db/enums.py" = ["UP042"]
+"migrations/**/*.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
@@ -77,6 +82,7 @@ fail_under = 80
 
 [tool.importlinter]
 root_package = "milaan"
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Domain has zero I/O and zero framework imports"

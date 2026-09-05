@@ -34,8 +34,14 @@ def test_same_seed_is_byte_identical_on_disk(tmp_path: Path) -> None:
     out1, out2 = tmp_path / "a", tmp_path / "b"
     write_outputs(b1, out1)
     write_outputs(b2, out2)
-    for name in ["orders.csv", "gateway_settlement.csv", "bank_statement.csv",
-                 "ground_truth.jsonl", "pathology_manifest.jsonl", "manifest.json"]:
+    for name in [
+        "orders.csv",
+        "gateway_settlement.csv",
+        "bank_statement.csv",
+        "ground_truth.jsonl",
+        "pathology_manifest.jsonl",
+        "manifest.json",
+    ]:
         assert (out1 / name).read_bytes() == (out2 / name).read_bytes(), f"{name} differs"
 
 
