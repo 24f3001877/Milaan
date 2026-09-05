@@ -167,8 +167,7 @@ deterministic evaluation gate on pushes to `main` and pull requests. See
 ## Architecture and stack
 
 Python 3.12, FastAPI, PostgreSQL 16, SQLAlchemy 2.0, Celery + Redis, Vue 3 + TypeScript +
-Vite, pandas/Decimal (never float) for money. Full rationale for every choice in
-`docs/02-TRD.md` section 2.1.
+Vite, pandas/Decimal (never float) for money. 
 
 ## Repository layout
 
@@ -226,15 +225,6 @@ This is a buildathon MVP, not a production banking platform. Production use woul
 SSO/RBAC, tenancy isolation, managed encryption, durable object storage, observability, and
 separation of analyst and controller approvals.
 
-## Project documents
-
-- [`docs/00-README-index.md`](docs/00-README-index.md): blueprint index
-- [`docs/01-PDR.md`](docs/01-PDR.md): product requirements
-- [`docs/02-TRD.md`](docs/02-TRD.md): technical design and API surface
-- [`docs/03-UIUX.md`](docs/03-UIUX.md): user flows and interface specification
-- [`docs/04-Appflow-CICD.md`](docs/04-Appflow-CICD.md): CI/CD and deployment strategy
-- [`docs/05-Backend-Schema.md`](docs/05-Backend-Schema.md): database schema and integrity rules
-- [`docs/06-Implementation-Plan.md`](docs/06-Implementation-Plan.md): implementation plan
 
 ## Buildathon links
 

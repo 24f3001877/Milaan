@@ -21,3 +21,4 @@ pathology_table.md
 .env.deploy
 frontend/.env.local
 docs/
+frontend/.env
